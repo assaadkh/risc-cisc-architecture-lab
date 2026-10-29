@@ -1,0 +1,32 @@
+# RISC ↔ CISC Architecture Lab
+
+An interactive, database-free learning simulator that compares simplified RISC and CISC execution side by side.
+
+## Features
+
+- Synchronized instruction stepping and automatic execution
+- RISC pipeline and CISC micro-operation visualization
+- Live registers, memory, hazards, CPI, cycle count, and code-size metrics
+- Three equivalent workload presets
+- Optional L1-cache latency model
+- Guided architecture explanations and a knowledge quiz
+- Responsive light and dark interfaces
+
+## Run locally
+
+No build step, package manager, server framework, or database is required.
+
+```bash
+python -m http.server 4173 --directory dist
+```
+
+Then open `http://localhost:4173`.
+
+## Deployment
+
+GitHub Pages deploys the static contents of `dist/` automatically whenever `main` is updated.
+
+## Model scope
+
+This is a transparent educational model, not a cycle-accurate replica of a specific ARM, RISC-V, Intel, or AMD processor. Its timing values are illustrative and designed to expose architectural trade-offs.
+
