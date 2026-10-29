@@ -10,6 +10,7 @@ An interactive, database-free learning simulator that compares simplified RISC a
 - Worked RISC examples for `ADD`, `LW`, `SW`, and `BEQ`
 - Worked CISC examples for `MOV`, memory-operand `ADD`, `REP MOVSD`, and `PUSH`
 - Phase-by-phase buses, control signals, calculations, and before/after state
+- Animated side-by-side RISC and CISC execution flowcharts with decision branches
 - Live registers, memory, hazards, CPI, cycle count, and code-size metrics
 - Three equivalent workload presets
 - Optional L1-cache latency model

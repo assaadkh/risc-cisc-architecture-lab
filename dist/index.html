@@ -14,7 +14,7 @@
       <span>ARCHITECTURE <b>LAB</b></span>
     </a>
     <nav aria-label="Main navigation">
-      <a href="#simulator">Simulator</a><a href="#deep-dive">CPU Deep Dive</a><a href="#anatomy">Anatomy</a><a href="#learn">Learn</a>
+      <a href="#simulator">Simulator</a><a href="#deep-dive">CPU Deep Dive</a><a href="#flowchart">Flowchart</a><a href="#anatomy">Anatomy</a><a href="#learn">Learn</a>
     </nav>
     <button class="icon-button" id="themeBtn" aria-label="Toggle theme">◐</button>
   </header>
@@ -254,6 +254,81 @@
         <div><small>Memory accesses</small><b id="deepMemAccess">1 instruction fetch</b></div>
         <p id="deepTakeaway"><strong>Takeaway:</strong> the ADD instruction is regular and pipeline-friendly: decode fields sit in fixed positions and no data-memory access is required.</p>
       </div>
+    </section>
+
+    <section class="flow-section" id="flowchart">
+      <div class="section-heading flow-heading">
+        <div><p class="eyebrow"><span></span> Architecture map</p><h2>RISC and CISC<br>as flowcharts.</h2></div>
+        <p>Both processors must fetch, understand, execute, and retire commands. The important difference is where complexity lives: in a longer stream of simple RISC instructions, or inside the decoding and execution of a richer CISC instruction.</p>
+      </div>
+
+      <div class="flow-grid">
+        <article class="flow-card risc-flow" data-flow-card="risc">
+          <header>
+            <div><span class="flow-kicker">RISC · LOAD–STORE PATH</span><h3>Simple command, regular flow</h3></div>
+            <button class="flow-run" data-flow-run="risc">Animate RISC <b>▶</b></button>
+          </header>
+          <div class="flow-chart" aria-label="RISC instruction execution flowchart">
+            <div class="flow-node terminator" data-flow-step="0"><small>START</small><b>PC points to next instruction</b><span>Example PC = 0x0040</span></div>
+            <div class="flow-arrow"><i></i><span>clock edge</span></div>
+            <div class="flow-node process" data-flow-step="1"><small>1 · FETCH</small><b>Read one fixed 32-bit instruction</b><span>I-MEM[PC] → instruction register</span></div>
+            <div class="flow-arrow"><i></i><span>PC ← PC + 4</span></div>
+            <div class="flow-node process" data-flow-step="2"><small>2 · DECODE</small><b>Read opcode and register fields</b><span>Usually reads two registers in parallel</span></div>
+            <div class="flow-arrow"><i></i><span>control signals</span></div>
+            <div class="flow-diamond-wrap" data-flow-step="3">
+              <div class="flow-diamond"><b>Memory<br>command?</b></div>
+            </div>
+            <div class="flow-branch">
+              <div class="branch-side"><span>NO · ALU / BRANCH</span><i></i><div class="flow-node compact process" data-flow-step="4"><small>3A · EXECUTE</small><b>One simple ALU operation</b><em>ADD · SUB · AND · compare</em></div></div>
+              <div class="branch-side"><span>YES · LOAD / STORE</span><i></i><div class="flow-node compact process" data-flow-step="5"><small>3B · ADDRESS</small><b>ALU forms memory address</b><em>base register + offset</em></div><div class="flow-arrow short"><i></i></div><div class="flow-node compact io" data-flow-step="6"><small>4 · MEMORY</small><b>Read or write data memory</b><em>only LOAD and STORE</em></div></div>
+            </div>
+            <div class="flow-merge"><i></i><span>merge result path</span></div>
+            <div class="flow-node process" data-flow-step="7"><small>5 · WRITEBACK</small><b>Write result to destination register</b><span>Stores and branches skip register write</span></div>
+            <div class="flow-arrow"><i></i><span>next clock</span></div>
+            <div class="flow-node terminator" data-flow-step="8"><small>FINISH</small><b>Instruction retires</b><span>Pipeline accepts the next simple command</span></div>
+          </div>
+          <footer><b>Where complexity lives</b><p>The compiler combines many regular instructions. Hardware decoding stays fast and predictable.</p></footer>
+        </article>
+
+        <article class="flow-card cisc-flow" data-flow-card="cisc">
+          <header>
+            <div><span class="flow-kicker">CISC · VARIABLE-LENGTH PATH</span><h3>Rich command, adaptive flow</h3></div>
+            <button class="flow-run" data-flow-run="cisc">Animate CISC <b>▶</b></button>
+          </header>
+          <div class="flow-chart" aria-label="CISC instruction execution flowchart">
+            <div class="flow-node terminator" data-flow-step="0"><small>START</small><b>EIP points to next instruction byte</b><span>Example EIP = 0x004000</span></div>
+            <div class="flow-arrow"><i></i><span>fetch byte window</span></div>
+            <div class="flow-node io" data-flow-step="1"><small>1 · FETCH</small><b>Read a block of instruction bytes</b><span>Instruction may be 1–15 bytes long</span></div>
+            <div class="flow-arrow"><i></i><span>prefix + opcode + fields</span></div>
+            <div class="flow-node process" data-flow-step="2"><small>2 · LENGTH DECODE</small><b>Find where this instruction ends</b><span>Identify prefixes, ModR/M, SIB, displacement</span></div>
+            <div class="flow-arrow"><i></i><span>decoded command</span></div>
+            <div class="flow-diamond-wrap" data-flow-step="3">
+              <div class="flow-diamond"><b>Complex<br>command?</b></div>
+            </div>
+            <div class="flow-branch">
+              <div class="branch-side"><span>NO · FAST DECODER</span><i></i><div class="flow-node compact process" data-flow-step="4"><small>3A · DIRECT DECODE</small><b>Generate a few micro-ops</b><em>example: ADD register</em></div></div>
+              <div class="branch-side"><span>YES · MICROCODE</span><i></i><div class="flow-node compact process" data-flow-step="5"><small>3B · µCODE ROM</small><b>Read a micro-op sequence</b><em>example: REP MOVSD</em></div></div>
+            </div>
+            <div class="flow-merge"><i></i><span>micro-op stream</span></div>
+            <div class="flow-node process" data-flow-step="6"><small>4 · RENAME & SCHEDULE</small><b>Map registers and dispatch micro-ops</b><span>Internal operations may execute out of order</span></div>
+            <div class="flow-arrow"><i></i><span>ready operands</span></div>
+            <div class="flow-node io" data-flow-step="7"><small>5 · EXECUTE</small><b>ALU, address, load, and store units work</b><span>One command may require several units and cycles</span></div>
+            <div class="flow-arrow loop-arrow"><i></i><span>repeat until every µop completes</span></div>
+            <div class="flow-node process" data-flow-step="8"><small>6 · RETIRE IN ORDER</small><b>Commit the original instruction</b><span>Registers, flags, memory, and EIP become visible</span></div>
+            <div class="flow-arrow"><i></i><span>EIP advances by decoded length</span></div>
+            <div class="flow-node terminator" data-flow-step="9"><small>FINISH</small><b>Instruction retires</b><span>The next variable-length command proceeds</span></div>
+          </div>
+          <footer><b>Where complexity lives</b><p>Hardware decoding and microcode translate expressive instructions into smaller internal operations.</p></footer>
+        </article>
+      </div>
+
+      <div class="same-job">
+        <div class="same-job-title"><span class="deep-label">Same job · add a memory value to a register</span><h3>Different paths to the same result</h3></div>
+        <div class="job-path risc-job"><span>RISC</span><code>LW R2, 0(R4)</code><i>→</i><code>ADD R1, R1, R2</code><small>2 architectural instructions · explicit load</small></div>
+        <div class="job-path cisc-job"><span>CISC</span><code>ADD EAX, [EBX]</code><small>1 architectural instruction · load hidden inside command</small></div>
+      </div>
+
+      <div class="flow-legend"><span><i class="shape term"></i> Start / finish</span><span><i class="shape proc"></i> Processor action</span><span><i class="shape decision"></i> Decision</span><span><i class="shape input"></i> Memory / data transfer</span></div>
     </section>
 
     <section class="anatomy" id="anatomy">
