@@ -14,7 +14,7 @@
       <span>ARCHITECTURE <b>LAB</b></span>
     </a>
     <nav aria-label="Main navigation">
-      <a href="#simulator">Simulator</a><a href="#anatomy">Anatomy</a><a href="#learn">Learn</a>
+      <a href="#simulator">Simulator</a><a href="#deep-dive">CPU Deep Dive</a><a href="#anatomy">Anatomy</a><a href="#learn">Learn</a>
     </nav>
     <button class="icon-button" id="themeBtn" aria-label="Toggle theme">◐</button>
   </header>
@@ -152,6 +152,107 @@
             <small><b class="dot risc-dot"></b> RISC <b class="dot cisc-dot"></b> CISC</small>
           </div>
         </div>
+      </div>
+    </section>
+
+    <section class="deep-dive" id="deep-dive">
+      <div class="section-heading deep-heading">
+        <div><p class="eyebrow"><span></span> Inside one instruction</p><h2>Follow the command<br>through the CPU.</h2></div>
+        <p>Choose an architecture and a real instruction pattern. Then advance one internal phase at a time to see the binary fields, data movement, control signals, calculation, and architectural result.</p>
+      </div>
+
+      <div class="deep-shell">
+        <aside class="deep-controls">
+          <span class="deep-label">1 · Architecture</span>
+          <div class="arch-switch" role="group" aria-label="Choose architecture">
+            <button class="active" data-deep-arch="risc">RISC</button>
+            <button data-deep-arch="cisc">CISC</button>
+          </div>
+
+          <span class="deep-label">2 · Example command</span>
+          <div class="command-list" id="deepCommandList"></div>
+
+          <div class="deep-note">
+            <b id="deepModelTitle">RISC model</b>
+            <p id="deepModelNote">Fixed 32-bit instructions and a load–store datapath. Only explicit load/store commands access data memory.</p>
+          </div>
+        </aside>
+
+        <div class="deep-main">
+          <div class="instruction-card">
+            <div>
+              <span class="deep-label">Selected instruction</span>
+              <code id="deepAsm">ADD R3, R1, R2</code>
+              <p id="deepPurpose">Add the values in R1 and R2, then write the result to R3.</p>
+            </div>
+            <div class="binary-box">
+              <span class="deep-label">Machine encoding</span>
+              <div id="binaryFields"></div>
+              <small id="binaryHex">0x0020 81B3 · 32 bits</small>
+            </div>
+          </div>
+
+          <div class="phase-strip" id="phaseStrip" aria-label="Instruction phases"></div>
+
+          <div class="datapath-wrap">
+            <div class="datapath-head">
+              <div><span class="deep-label">Live datapath</span><strong id="phaseTitle">Instruction fetch</strong></div>
+              <div class="cycle-counter"><small>Internal phase</small><b id="phaseCounter">1 / 5</b></div>
+            </div>
+
+            <div class="datapath" id="datapath">
+              <svg viewBox="0 0 1000 430" preserveAspectRatio="none" aria-hidden="true">
+                <defs><marker id="arrowHead" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z"></path></marker></defs>
+                <path data-path="pc-imem" d="M150 105 H270"></path>
+                <path data-path="imem-decode" d="M410 105 H530"></path>
+                <path data-path="decode-regs" d="M650 105 H770 V180"></path>
+                <path data-path="regs-alu" d="M760 245 H620"></path>
+                <path data-path="decode-alu" d="M590 160 V220"></path>
+                <path data-path="alu-memory" d="M500 280 H385"></path>
+                <path data-path="memory-writeback" d="M260 280 H175 V355 H420"></path>
+                <path data-path="alu-writeback" d="M500 320 V365 H420"></path>
+                <path data-path="writeback-regs" d="M570 365 H850 V310"></path>
+              </svg>
+              <div class="unit unit-pc" data-unit="pc"><small>PROGRAM COUNTER</small><b>PC</b><span id="unitPc">0x0040</span></div>
+              <div class="unit unit-imem" data-unit="imem"><small>INSTRUCTION MEMORY</small><b>I-MEM</b><span id="unitImem">read 32 bits</span></div>
+              <div class="unit unit-decode" data-unit="decode"><small>DECODER / CONTROL</small><b id="decodeUnitName">CONTROL</b><span id="unitDecode">opcode → signals</span></div>
+              <div class="unit unit-regs" data-unit="regs"><small>REGISTER FILE</small><b>REGS</b><span id="unitRegs">R1=7 · R2=12</span></div>
+              <div class="unit unit-alu" data-unit="alu"><small>ARITHMETIC UNIT</small><b>ALU</b><span id="unitAlu">7 + 12</span></div>
+              <div class="unit unit-memory" data-unit="memory"><small>DATA MEMORY</small><b>D-MEM</b><span id="unitMemory">no access</span></div>
+              <div class="unit unit-writeback" data-unit="writeback"><small>COMMIT RESULT</small><b>WRITEBACK</b><span id="unitWriteback">R3 ← 19</span></div>
+            </div>
+
+            <div class="phase-explanation">
+              <span class="phase-number" id="phaseNumber">01</span>
+              <div><h3 id="phaseHeading">Fetch the instruction</h3><p id="phaseExplanation">The program counter supplies address 0x0040. Instruction memory returns the 32-bit ADD encoding while the next sequential PC is prepared.</p></div>
+              <div class="transfer-box"><small>DATA ON THE BUS</small><code id="busValue">0x002081B3</code></div>
+            </div>
+          </div>
+
+          <div class="deep-bottom">
+            <div class="signal-panel">
+              <div class="panel-title"><span>Control signals</span><small>active this phase</small></div>
+              <div id="controlSignals" class="signal-list"></div>
+            </div>
+            <div class="state-panel">
+              <div class="panel-title"><span>Architectural state</span><small>before → after</small></div>
+              <div id="deepState"></div>
+            </div>
+            <div class="command-controls">
+              <button id="deepReset" aria-label="Restart instruction">↺</button>
+              <button id="deepStep">Next phase <b>→</b></button>
+              <button id="deepRun">Run command <b>▶</b></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="deep-summary">
+        <div><small>Instruction length</small><b id="deepLength">32 bits · fixed</b></div>
+        <div><small>Architectural instructions</small><b>1</b></div>
+        <div><small>Internal operations</small><b id="deepUops">5 phases</b></div>
+        <div><small>Memory accesses</small><b id="deepMemAccess">1 instruction fetch</b></div>
+        <p id="deepTakeaway"><strong>Takeaway:</strong> the ADD instruction is regular and pipeline-friendly: decode fields sit in fixed positions and no data-memory access is required.</p>
       </div>
     </section>
 
