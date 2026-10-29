@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="An interactive RISC vs CISC architecture simulator and learning lab." />
+  <title>RISC ↔ CISC Architecture Lab</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="Architecture Lab home">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span>ARCHITECTURE <b>LAB</b></span>
+    </a>
+    <nav aria-label="Main navigation">
+      <a href="#simulator">Simulator</a><a href="#anatomy">Anatomy</a><a href="#learn">Learn</a>
+    </nav>
+    <button class="icon-button" id="themeBtn" aria-label="Toggle theme">◐</button>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow"><span></span> Interactive systems courseware</p>
+        <h1>Two philosophies.<br><em>One computation.</em></h1>
+        <p class="lede">Run the same algorithm through simplified RISC and CISC machines. Watch instructions, pipelines, registers, memory traffic, and performance diverge—one cycle at a time.</p>
+        <div class="hero-actions">
+          <a class="btn primary" href="#simulator">Launch simulator <b>↓</b></a>
+          <button class="btn ghost" id="tourBtn">Take the 60-second tour</button>
+        </div>
+      </div>
+      <div class="hero-visual" aria-hidden="true">
+        <div class="chip risc-chip"><small>RISC CORE</small><strong>01</strong><div class="chip-grid"></div><span>LOAD / ALU / STORE</span></div>
+        <div class="pulse"></div>
+        <div class="chip cisc-chip"><small>CISC CORE</small><strong>86</strong><div class="chip-grid dense"></div><span>MEMORY-TO-MEMORY</span></div>
+        <div class="hero-stat stat-a"><b>5</b><span>pipeline stages</span></div>
+        <div class="hero-stat stat-b"><b>1–6</b><span>cycles / instruction</span></div>
+      </div>
+    </section>
+
+    <section class="concept-strip" aria-label="Core contrast">
+      <article><span class="num">01</span><div><b>RISC</b><p>Small, regular instructions optimized for fast pipelines and compiler scheduling.</p></div></article>
+      <div class="versus">VS</div>
+      <article><span class="num">02</span><div><b>CISC</b><p>Rich, variable-length instructions that encode more work and improve code density.</p></div></article>
+    </section>
+
+    <section class="sim-section" id="simulator">
+      <div class="section-heading">
+        <div><p class="eyebrow"><span></span> Live comparison</p><h2>Execution workbench</h2></div>
+        <p>The models are intentionally educational—not cycle-accurate replicas of a specific commercial processor. Both execute equivalent tasks.</p>
+      </div>
+
+      <div class="workbench">
+        <aside class="control-rail">
+          <div class="rail-section">
+            <label for="presetSelect">Program preset</label>
+            <select id="presetSelect">
+              <option value="sum">Sum four integers</option>
+              <option value="expression">Evaluate (A + B) × C</option>
+              <option value="copy">Copy a memory block</option>
+            </select>
+            <p class="hint" id="presetHint">Accumulate four values from memory and store the result.</p>
+          </div>
+          <div class="rail-section">
+            <span class="label">Clock controls</span>
+            <div class="transport">
+              <button id="resetBtn" aria-label="Reset">↺</button>
+              <button id="stepBtn" aria-label="Step one instruction">▸│</button>
+              <button id="runBtn" class="run" aria-label="Run or pause">▶</button>
+            </div>
+            <label class="speed-label" for="speedRange"><span>Simulation speed</span><output id="speedOut">1.0×</output></label>
+            <input id="speedRange" type="range" min="1" max="5" value="3" />
+          </div>
+          <div class="rail-section toggles">
+            <span class="label">Model options</span>
+            <label><input id="hazardToggle" type="checkbox" checked><span></span> Show data hazards</label>
+            <label><input id="cacheToggle" type="checkbox" checked><span></span> Simulate L1 cache</label>
+          </div>
+          <div class="rail-section status-card">
+            <span class="status-dot"></span><div><small>SIMULATION</small><strong id="globalStatus">Ready</strong></div>
+          </div>
+        </aside>
+
+        <div class="machines">
+          <article class="machine risc" data-machine="risc">
+            <header><div><span class="arch-tag">RISC / LOAD–STORE</span><h3>Regular pipeline</h3></div><span class="arch-icon">R</span></header>
+            <div class="metrics">
+              <div><small>Instructions</small><b data-metric="instructions">0</b></div>
+              <div><small>Cycles</small><b data-metric="cycles">0</b></div>
+              <div><small>CPI</small><b data-metric="cpi">—</b></div>
+              <div><small>Code bytes</small><b data-metric="bytes">0</b></div>
+            </div>
+            <div class="pipeline-wrap">
+              <div class="panel-title"><span>5-stage pipeline</span><small data-role="pipe-status">IDLE</small></div>
+              <div class="pipeline" data-role="pipeline"></div>
+              <div class="hazard-note" data-role="hazard">No active hazard</div>
+            </div>
+            <div class="current-op">
+              <div class="panel-title"><span>Current instruction</span><small data-role="pc">PC 0x00</small></div>
+              <code data-role="current">— waiting —</code>
+              <p data-role="explain">Press Step or Run to begin execution.</p>
+              <div class="microops" data-role="microops"></div>
+            </div>
+            <details class="editor" open>
+              <summary>Assembly program <span>editable</span></summary>
+              <textarea data-role="editor" spellcheck="false" aria-label="RISC assembly editor"></textarea>
+            </details>
+            <div class="state-grid">
+              <div><div class="panel-title"><span>Registers</span><small>32-bit</small></div><div class="registers" data-role="registers"></div></div>
+              <div><div class="panel-title"><span>Memory</span><small>word view</small></div><div class="memory" data-role="memory"></div></div>
+            </div>
+          </article>
+
+          <div class="sync-line"><span>LOCKSTEP<br>COMPARISON</span></div>
+
+          <article class="machine cisc" data-machine="cisc">
+            <header><div><span class="arch-tag">CISC / MEMORY–MEMORY</span><h3>Dense instruction stream</h3></div><span class="arch-icon">C</span></header>
+            <div class="metrics">
+              <div><small>Instructions</small><b data-metric="instructions">0</b></div>
+              <div><small>Cycles</small><b data-metric="cycles">0</b></div>
+              <div><small>CPI</small><b data-metric="cpi">—</b></div>
+              <div><small>Code bytes</small><b data-metric="bytes">0</b></div>
+            </div>
+            <div class="pipeline-wrap">
+              <div class="panel-title"><span>Decode & execute</span><small data-role="pipe-status">IDLE</small></div>
+              <div class="pipeline" data-role="pipeline"></div>
+              <div class="hazard-note" data-role="hazard">Microcode sequencer inactive</div>
+            </div>
+            <div class="current-op">
+              <div class="panel-title"><span>Current instruction</span><small data-role="pc">PC 0x00</small></div>
+              <code data-role="current">— waiting —</code>
+              <p data-role="explain">Press Step or Run to begin execution.</p>
+              <div class="microops" data-role="microops"></div>
+            </div>
+            <details class="editor" open>
+              <summary>Assembly program <span>editable</span></summary>
+              <textarea data-role="editor" spellcheck="false" aria-label="CISC assembly editor"></textarea>
+            </details>
+            <div class="state-grid">
+              <div><div class="panel-title"><span>Registers</span><small>32-bit</small></div><div class="registers" data-role="registers"></div></div>
+              <div><div class="panel-title"><span>Memory</span><small>word view</small></div><div class="memory" data-role="memory"></div></div>
+            </div>
+          </article>
+        </div>
+
+        <div class="verdict" id="verdict">
+          <div><span class="label">Live finding</span><h3 id="verdictTitle">Ready to compare</h3><p id="verdictText">Run a preset to see which design uses fewer instructions, fewer cycles, and less program memory.</p></div>
+          <div class="verdict-bars">
+            <div><span>Execution cycles</span><div><i id="riscCycleBar"></i><i id="ciscCycleBar"></i></div></div>
+            <div><span>Code footprint</span><div><i id="riscByteBar"></i><i id="ciscByteBar"></i></div></div>
+            <small><b class="dot risc-dot"></b> RISC <b class="dot cisc-dot"></b> CISC</small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="anatomy" id="anatomy">
+      <div class="section-heading"><div><p class="eyebrow"><span></span> Under the hood</p><h2>Why they behave differently</h2></div></div>
+      <div class="anatomy-grid">
+        <article><span>01</span><h3>Instruction format</h3><div class="format-viz"><i>OP</i><i>RD</i><i>RS1</i><i>RS2</i></div><p>RISC favors fixed-width fields. Fetch and decode stay predictable, while complex work is composed from several instructions.</p></article>
+        <article><span>02</span><h3>Memory access</h3><div class="flow-viz"><i>REG</i><b>→</b><i>ALU</i><b>→</b><i>MEM</i></div><p>A load–store ISA isolates memory access. CISC instructions may combine address calculation, memory access, and arithmetic.</p></article>
+        <article><span>03</span><h3>Control strategy</h3><div class="control-viz"><i></i><i></i><i></i><i></i><i></i></div><p>Simple instructions map cleanly to hardwired control. Rich instructions may expand into internal micro-operations.</p></article>
+      </div>
+    </section>
+
+    <section class="learn" id="learn">
+      <div class="learn-copy"><p class="eyebrow"><span></span> Knowledge check</p><h2>Design is trade-off,<br>not a scoreboard.</h2><p>Modern processors blur the historical line: many CISC cores translate instructions into RISC-like micro-ops, while RISC ISAs continue to add specialized extensions.</p></div>
+      <div class="quiz" id="quiz">
+        <div class="quiz-head"><span>Quick check</span><small id="quizProgress">1 / 3</small></div>
+        <h3 id="quizQuestion">Which design typically uses fixed-length instructions?</h3>
+        <div id="quizOptions" class="quiz-options"></div>
+        <p id="quizFeedback" class="quiz-feedback" aria-live="polite"></p>
+        <button id="nextQuestion" class="btn primary" hidden>Next question →</button>
+      </div>
+    </section>
+  </main>
+
+  <footer><div class="brand"><span class="brand-mark"><i></i><i></i><i></i></span><span>ARCHITECTURE <b>LAB</b></span></div><p>Educational model · Values are illustrative · Built for exploration</p><a href="#top">Back to top ↑</a></footer>
+
+  <div class="tour" id="tour" hidden role="dialog" aria-modal="true" aria-labelledby="tourTitle">
+    <div class="tour-card"><button id="tourClose" aria-label="Close">×</button><span class="tour-step" id="tourStep">01 / 04</span><h2 id="tourTitle">Choose the workload</h2><p id="tourText">Start with one of three equivalent programs. Each preset loads matching memory into both machines.</p><div class="tour-dots"><i class="active"></i><i></i><i></i><i></i></div><button class="btn primary" id="tourNext">Next →</button></div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
