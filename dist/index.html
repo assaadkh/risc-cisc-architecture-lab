@@ -381,18 +381,18 @@
             <div class="die-layer">
               <div class="die-grid"></div>
               <svg class="core-traces risc-core-element" viewBox="0 0 760 440" preserveAspectRatio="none" aria-hidden="true">
-                <path data-core-path="pc-icache" d="M110 100 H220"></path>
-                <path data-core-path="icache-decode" d="M310 100 H365"></path>
-                <path data-core-path="decode-regs" d="M465 100 H530"></path>
-                <path data-core-path="regs-alu" d="M600 145 V225 H455"></path>
-                <path data-core-path="decode-alu" d="M415 145 V225"></path>
-                <path data-core-path="alu-dcache" d="M500 275 H575"></path>
-                <path data-core-path="alu-writeback" d="M455 305 V355 H545"></path>
-                <path data-core-path="dcache-writeback" d="M630 305 V355 H605"></path>
-                <path data-core-path="writeback-regs" d="M600 355 H690 V145 H650"></path>
-                <path data-core-path="alu-branch" d="M405 275 H245"></path>
-                <path data-core-path="branch-pc" d="M180 265 H90 V145"></path>
-                <path data-core-path="clock" d="M70 385 H690"></path>
+                <path data-core-path="pc-icache" d="M175 66 H205"></path>
+                <path data-core-path="icache-decode" d="M357 66 H388"></path>
+                <path data-core-path="decode-regs" d="M540 66 H570"></path>
+                <path data-core-path="regs-alu" d="M650 106 V142 H420 V167"></path>
+                <path data-core-path="decode-alu" d="M464 106 V167"></path>
+                <path data-core-path="alu-dcache" d="M479 207 H547"></path>
+                <path data-core-path="alu-writeback" d="M388 247 V290"></path>
+                <path data-core-path="dcache-writeback" d="M638 247 V321 H509"></path>
+                <path data-core-path="writeback-regs" d="M509 321 H742 V66 H730"></path>
+                <path data-core-path="alu-branch" d="M296 207 H228"></path>
+                <path data-core-path="branch-pc" d="M144 167 V135 H102 V106"></path>
+                <path data-core-path="clock" d="M40 408 H720"></path>
               </svg>
               <div class="core-unit unit-clock" data-core-unit="clock"><small>GLOBAL CLOCK</small><b>CLK</b><span>1.00 GHz</span></div>
               <div class="core-unit unit-pc3d risc-core-element" data-core-unit="pc"><small>PROGRAM COUNTER</small><b>PC</b><span>0x0040</span></div>
@@ -405,19 +405,19 @@
               <div class="core-unit unit-writeback3d risc-core-element" data-core-unit="writeback"><small>RESULT BUS</small><b>WRITEBACK</b><span>commit register</span></div>
 
               <svg class="core-traces cisc-core-element hidden" viewBox="0 0 760 440" preserveAspectRatio="none" aria-hidden="true">
-                <path data-core-path="c-front-length" d="M105 100 H190"></path>
-                <path data-core-path="c-length-decode" d="M285 100 H330"></path>
-                <path data-core-path="c-decode-ucode" d="M430 100 H490"></path>
-                <path data-core-path="c-decode-queue" d="M430 125 H620"></path>
-                <path data-core-path="c-ucode-queue" d="M590 100 H620"></path>
-                <path data-core-path="c-queue-sched" d="M680 145 V220 H460"></path>
-                <path data-core-path="c-rename-sched" d="M290 270 H370"></path>
-                <path data-core-path="c-sched-exec" d="M475 270 H545"></path>
-                <path data-core-path="c-exec-lsu" d="M640 270 H675"></path>
-                <path data-core-path="c-lsu-exec" d="M675 295 H640"></path>
-                <path data-core-path="c-exec-retire" d="M590 315 V360"></path>
-                <path data-core-path="c-lsu-retire" d="M700 315 V360 H640"></path>
-                <path data-core-path="c-retire-rename" d="M540 385 H245 V315"></path>
+                <path data-core-path="c-front-length" d="M152 66 H167"></path>
+                <path data-core-path="c-length-decode" d="M296 66 H312"></path>
+                <path data-core-path="c-decode-ucode" d="M448 66 H464"></path>
+                <path data-core-path="c-decode-queue" d="M380 106 V132 H672 V106"></path>
+                <path data-core-path="c-ucode-queue" d="M593 66 H608"></path>
+                <path data-core-path="c-queue-sched" d="M672 106 V142 H292 V167"></path>
+                <path data-core-path="c-rename-sched" d="M182 207 H213"></path>
+                <path data-core-path="c-sched-exec" d="M372 207 H403"></path>
+                <path data-core-path="c-exec-lsu" d="M547 198 H578"></path>
+                <path data-core-path="c-lsu-exec" d="M578 218 H547"></path>
+                <path data-core-path="c-exec-retire" d="M475 247 V290"></path>
+                <path data-core-path="c-lsu-retire" d="M658 247 V321 H517"></path>
+                <path data-core-path="c-retire-rename" d="M258 321 H106 V247"></path>
               </svg>
               <div class="core-unit c-unit-front cisc-core-element hidden" data-core-unit="front"><small>FETCH / ALIGN</small><b>BYTE FRONT END</b><span>16-byte window</span></div>
               <div class="core-unit c-unit-length cisc-core-element hidden" data-core-unit="length"><small>BOUNDARY DETECTION</small><b>LENGTH DEC</b><span>1–15 bytes</span></div>

@@ -276,8 +276,15 @@ function renderCore(){
     u.classList.toggle('visited',program.steps.slice(0,coreStepIndex).some(s=>s.unit===u.dataset.coreUnit));
   });
   $$('[data-core-path]').forEach(p=>p.classList.toggle('active',step.path.includes(p.dataset.corePath)));
-  $('#corePulse').style.left=step.xy[0]+'%';
-  $('#corePulse').style.top=step.xy[1]+'%';
+  const unitCenters={
+    pc:[13.5,15],icache:[37,15],decoder:[61,15],regs:[85.5,15],
+    branch:[19,47],alu:[51,47],dcache:[84,47],writeback:[51,73],
+    front:[11.5,15],length:[30.5,15],decodec:[50,15],ucode:[69.5,15],queue:[88.5,15],
+    rename:[14,47],sched:[38.5,47],exec:[62.5,47],lsu:[86.5,47],retire:[51,73]
+  };
+  const pulseXY=unitCenters[step.unit]||step.xy;
+  $('#corePulse').style.left=pulseXY[0]+'%';
+  $('#corePulse').style.top=pulseXY[1]+'%';
   $('#pulseValue').textContent=step.value.split(' · ')[0];
   $('#corePhaseNo').textContent=String(coreStepIndex+1).padStart(2,'0');
   $('#corePhaseTitle').textContent=step.title;
@@ -765,49 +772,90 @@ function startJourney3DLoop(){
       return project(cx,y1+4,cz);
     }
 
-    // Draw a smooth 3D shaded cylinder / tapered anatomical or metallic segment between p1 and p2
-    function drawCylinder3D(p1,p2,r1,r2,baseColor,edgeColor=null,segs=8){
-      const dx=p2[0]-p1[0], dy=p2[1]-p1[1], dz=p2[2]-p1[2];
-      const len=Math.hypot(dx,dy,dz)||1;
-      const dirX=dx/len, dirY=dy/len, dirZ=dz/len;
-      // Orthonormal basis perpendicular to cylinder axis
-      let ux1=-dirZ, uy1=0, uz1=dirX;
-      if(Math.hypot(ux1,uy1,uz1)<0.1){ux1=1;uy1=0;uz1=0}
-      const ul=Math.hypot(ux1,uy1,uz1)||1;
-      ux1/=ul; uy1/=ul; uz1/=ul;
-      const vx1=dirY*uz1-dirZ*uy1, vy1=dirZ*ux1-dirX*uz1, vz1=dirX*uy1-dirY*ux1;
+    // Smooth 3D gradient capsule renderer (zero polygon facets, smooth anti-aliased silhouettes & 3D Phong shading)
+    function drawSmoothCapsule3D(p1,p2,r1,r2,baseColor,highlightColor=null,rimColor=null){
+      const a=project(p1[0],p1[1],p1[2]), b=project(p2[0],p2[1],p2[2]);
+      if(!a||!b)return null;
+      const ra=Math.max(1.2,r1*a.s), rb=Math.max(1.2,r2*b.s);
+      const dx=b.x-a.x, dy=b.y-a.y;
+      const len=Math.hypot(dx,dy);
+      const hi=highlightColor||shadeColor(baseColor,1.26);
+      const mid=baseColor;
+      const dark=shadeColor(baseColor,0.58);
+      ctx.save();
+      if(len<0.5){
+        const g=ctx.createRadialGradient(a.x-ra*0.3,a.y-ra*0.3,ra*0.1,a.x,a.y,ra);
+        g.addColorStop(0,hi);
+        g.addColorStop(0.55,mid);
+        g.addColorStop(1,dark);
+        ctx.fillStyle=g;
+        ctx.beginPath();
+        ctx.arc(a.x,a.y,ra,0,Math.PI*2);
+        ctx.fill();
+        ctx.restore();
+        return b;
+      }
+      const ang=Math.atan2(dy,dx);
+      const nx=-dy/len, ny=dx/len;
+      const rm=Math.max(ra,rb);
+      const mx=(a.x+b.x)*0.5, my=(a.y+b.y)*0.5;
+      const grad=ctx.createLinearGradient(mx-nx*rm,my-ny*rm,mx+nx*rm,my+ny*rm);
+      grad.addColorStop(0,dark);
+      grad.addColorStop(0.28,hi);
+      grad.addColorStop(0.62,mid);
+      grad.addColorStop(1,shadeColor(baseColor,0.48));
 
-      const ring1=[], ring2=[];
-      for(let i=0;i<segs;i++){
-        const ang=(i/segs)*Math.PI*2;
-        const ca=Math.cos(ang), sa=Math.sin(ang);
-        const nx=ux1*ca+vx1*sa, ny=uy1*ca+vy1*sa, nz=uz1*ca+vz1*sa;
-        ring1.push([p1[0]+nx*r1, p1[1]+ny*r1, p1[2]+nz*r1, nx, ny, nz]);
-        ring2.push([p2[0]+nx*r2, p2[1]+ny*r2, p2[2]+nz*r2, nx, ny, nz]);
+      ctx.beginPath();
+      ctx.arc(a.x,a.y,ra,ang+Math.PI*0.5,ang+Math.PI*1.5);
+      ctx.arc(b.x,b.y,rb,ang-Math.PI*0.5,ang+Math.PI*0.5);
+      ctx.closePath();
+      ctx.fillStyle=grad;
+      ctx.fill();
+      if(rimColor){
+        ctx.strokeStyle=rimColor;
+        ctx.lineWidth=0.75;
+        ctx.stroke();
       }
-      const quads=[];
-      for(let i=0;i<segs;i++){
-        const ni=(i+1)%segs;
-        const a=ring1[i], b=ring1[ni], c=ring2[ni], d=ring2[i];
-        const mx=(a[0]+b[0]+c[0]+d[0])*0.25;
-        const my=(a[1]+b[1]+c[1]+d[1])*0.25;
-        const mz=(a[2]+b[2]+c[2]+d[2])*0.25;
-        const mnx=(a[3]+b[3])*0.5, mny=(a[4]+b[4])*0.5, mnz=(a[5]+b[5])*0.5;
-        // Overhead + front-left key light (-0.4, 0.8, -0.45)
-        const dot=Math.max(0,mnx*(-0.4)+mny*0.8+mnz*(-0.45));
-        const shade=0.58+dot*0.68;
-        quads.push({
-          pts:[[a[0],a[1],a[2]],[b[0],b[1],b[2]],[c[0],c[1],c[2]],[d[0],d[1],d[2]]],
-          col:shadeColor(baseColor,shade),
-          dist:Math.hypot(mx-camX,my-camY,mz-camZ)
-        });
+      ctx.restore();
+      return b;
+    }
+
+    // Draw a realistic glossy 3D fingernail at the tip of a finger
+    function drawFingernail3D(pTip,pDip,radius,isHighlight=false){
+      const a=project(pDip[0],pDip[1],pDip[2]), b=project(pTip[0],pTip[1],pTip[2]);
+      if(!a||!b)return;
+      const rb=Math.max(1.5,radius*b.s*0.72);
+      const ang=Math.atan2(b.y-a.y,b.x-a.x);
+      const nx=b.x-Math.cos(ang)*rb*0.35, ny=b.y-Math.sin(ang)*rb*0.35;
+      ctx.save();
+      ctx.translate(nx,ny);
+      ctx.rotate(ang);
+      ctx.beginPath();
+      ctx.ellipse(0,0,rb*0.95,rb*0.68,0,0,Math.PI*2);
+      ctx.fillStyle=isHighlight?'#ffffff':'#fcefe6';
+      ctx.strokeStyle=isHighlight?accent:'rgba(165,105,75,0.55)';
+      ctx.lineWidth=0.8;
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Draw a smooth 3D shaded cylinder for hardware components (capacitors, gold pins, vias, knobs)
+    function drawCylinder3D(p1,p2,r1,r2,baseColor,edgeColor=null){
+      drawSmoothCapsule3D(p1,p2,r1,r2,baseColor,edgeColor||shadeColor(baseColor,1.32),'rgba(0,0,0,0.35)');
+      const b=project(p2[0],p2[1],p2[2]);
+      if(b&&b.z<600){
+        const rb=Math.max(1.2,r2*b.s);
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(b.x,b.y,rb,rb*0.58,0,0,Math.PI*2);
+        ctx.fillStyle=edgeColor||shadeColor(baseColor,1.25);
+        ctx.strokeStyle=shadeColor(baseColor,0.65);
+        ctx.lineWidth=0.7;
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
       }
-      quads.sort((a,b)=>b.dist-a.dist);
-      for(const q of quads){
-        drawPoly3D(q.pts,q.col,edgeColor||q.col,0.6);
-      }
-      // End cap at p2
-      drawPoly3D(ring2.map(p=>[p[0],p[1],p[2]]),shadeColor(baseColor,1.12),edgeColor,0.7);
     }
 
     // Draw a realistic multi-lane copper/silicon bus trace with metallic conductors & data capsules
@@ -957,59 +1005,20 @@ function startJourney3DLoop(){
       }
       spatialPins.push({pos:[-75,28,-250],tag:'HARDWARE TRIGGER',label:`CONTROLLER PAD (${journeyProgram().asm})`,hi:step.scene==='outside'});
 
-      // ----------------------------------------------------------------------
-      // REALISTIC SCULPTED 3D ENGINEER'S HANDS (Cylindrical Phalanges & Joints)
-      // ----------------------------------------------------------------------
-      // RIGHT HAND: Forearm sleeve -> ESD grounding wrist strap -> Palm -> 5 Articulated Cylindrical Fingers
-      drawCylinder3D([-104,74,-385],[-86,52,-318],17,14,'#1e293b','#334155',8); // Tailored dark lab coat sleeve
-      drawCylinder3D([-86,52,-318],[-83,48,-306],13.5,12.5,'#0284c7','#38bdf8',8); // Blue anti-static ESD wrist strap
-      drawCylinder3D([-83,48,-306],[-78,42,-282],12.5,14,'#d9a17c','#b87d56',8); // Sculpted wrist & palm dorsum
-      drawBox3D(-78,36,-282,27,11,26,'#d9a17c','#b87d56','#c98f68',0.8); // Metacarpal hand arch
-
-      // 5 Multi-segment anatomical right-hand fingers (knuckle -> proximal -> middle -> distal tip + fingernail)
-      const rHandFingers=[
-        {k:[-93,38,-282], m:[-101,34,-268], tip:[-98,29,-256], r:4.2, hi:false}, // Thumb
-        {k:[-66,40,-270], m:[-65,33+pressDip*0.5,-258], tip:[-65,21+pressDip,-254], r:3.9, hi:true}, // Index pressing EXECUTE!
-        {k:[-74,41,-270], m:[-74,35,-255], tip:[-74,28,-245], r:3.9, hi:false}, // Middle finger
-        {k:[-82,40,-271], m:[-82,34,-257], tip:[-82,28,-248], r:3.7, hi:false}, // Ring finger
-        {k:[-89,38,-273], m:[-90,33,-261], tip:[-90,27,-253], r:3.3, hi:false}  // Little finger
-      ];
-      for(const fg of rHandFingers){
-        drawCylinder3D(fg.k,fg.m,fg.r,fg.r*0.9,fg.hi?'#eab896':'#d9a17c','#b87d56',8);
-        drawCylinder3D(fg.m,fg.tip,fg.r*0.9,fg.r*0.76,fg.hi?accentBright:'#e0ab88',fg.hi?accent:'#c28760',8);
-      }
-      spatialPins.push({pos:[-76,64,-288],tag:'HUMAN OPERATOR',label:'ENGINEER HAND · PRESSING EXECUTE',hi:step.scene==='outside'});
-
-      // LEFT HAND: Holding Machined Aluminum & Rubber High-Frequency Logic Probe onto Controller Header
-      drawCylinder3D([-182,68,-260],[-146,46,-204],16,13,'#1e293b','#334155',8); // Left lab sleeve
-      drawCylinder3D([-146,46,-204],[-134,39,-186],12,13,'#d9a17c','#b87d56',8); // Left wrist & palm
-      // Sculpted left fingers wrapping around the Logic Probe grip
-      drawCylinder3D([-132,42,-186],[-116,38,-178],3.8,3.2,'#e0ab88','#b87d56',8);
-      drawCylinder3D([-134,36,-182],[-118,32,-175],3.8,3.2,'#d9a17c','#b87d56',8);
-      drawCylinder3D([-136,31,-179],[-122,28,-173],3.5,3.0,'#d49972','#b87d56',8);
-
-      // Machined 3D Logic Probe Barrel + Tapered Stainless Nose + Gold Pogo Needle Tip at (-14, 22, -165)
-      drawCylinder3D([-132,45,-182],[-68,33,-172],4.2,3.4,'#334155','#64748b',8); // Rubberized probe body
-      drawCylinder3D([-68,33,-172],[-28,25,-167],3.0,1.6,'#cbd5e1','#f8fafc',8); // Stainless probe barrel
-      drawLine3D([-28,25,-167],[-14,22,-165],'#fde047',3.2); // Gold spring-loaded pogo needle tip
-      // Coaxial cable from probe tail back to Oscilloscope CH1 BNC jack
-      drawLine3D([-132,45,-182],[-185,55,-135],'#475569',3.2);
-      drawLine3D([-185,55,-135],[-255,11,-83],'#475569',3.2);
-      spatialPins.push({pos:[-68,46,-172],tag:'SIGNAL INJECTION',label:'HIGH-FREQ LOGIC PROBE → CONTROLLER',hi:step.scene==='outside'||step.scene==='bench'});
-
       // ======================================================================
       // REALISTIC MOTHERBOARD PCB, VRM CAPACITORS, RAM & CONTROLLER IC CUTAWAY
+      // (Drawn BEFORE the Engineer's Hands & Probe so hands rest naturally on top!)
       // ======================================================================
       drawBox3D(0,2,0,348,14,288,'#0a2e1c','#061c11','#1e5e3a',1.5,0.3);
       // Gold-plated motherboard corner mounting holes / standoffs
       for(const [mx,mz] of [[-158,-128],[158,-128],[-158,128],[158,128]]){
-        drawCylinder3D([mx,15.5,mz],[mx,17.2,mz],6,6,'#eab308','#fef08a',8);
+        drawCylinder3D([mx,15.5,mz],[mx,17.2,mz],6,6,'#eab308','#fef08a');
       }
 
       // VRM Power Delivery Phase Inductors (Chokes) & Cylindrical Solid Polymer Capacitors around CPU Socket
       for(let vx=-48;vx<=48;vx+=24){
-        drawBox3D(vx,16,74,14,11,14,'#334155','#1e293b','#64748b',1); // Ferrite VRM choke
-        drawCylinder3D([vx,16,56],[vx,28,56],4.8,4.8,'#cbd5e1','#60a5fa',8); // Solid aluminum polymer capacitor
+        drawBox3D(vx,16,74,14,11,14,'#334155','#1e293b','#64748b',1);
+        drawCylinder3D([vx,16,56],[vx,28,56],4.8,4.8,'#cbd5e1','#60a5fa');
       }
 
       // 4 Realistic DDR4 RAM DIMM Modules with black BGA DRAM chips on each module
@@ -1024,15 +1033,13 @@ function startJourney3DLoop(){
 
       // Bus Controller QFP IC (-14, 16, -165) with gull-wing metallic leads & X-Ray silicon cutaway
       const ctrlOpen=step.scene==='bench'||step.scene==='board';
-      // QFP gull-wing solder pins along left and right sides of Controller IC
       for(let pz=-178;pz<=-152;pz+=5.2){
         drawLine3D([-42,16.5,pz],[-35,19,pz],'#cbd5e1',2.0);
         drawLine3D([7,19,pz],[14,16.5,pz],'#cbd5e1',2.0);
       }
       drawBox3D(-14,16,-165,48,11,38,ctrlOpen?'rgba(15,23,42,0.35)':'#1e293b','#0f172a',accent,ctrlOpen?2.0:1.2,16.1);
-      // Internal Silicon Die, Gold Bond Wires, Command Latch & Bit Serializer inside the Controller IC!
-      drawBox3D(-25,17,-168,15,7.5,14,accent,'#0f172a','#ffffff',1.1); // Command Latch macro
-      drawBox3D(-3,17,-160,17,7.5,15,'#f59e0b','#78350f','#fef08a',1.1); // Bit Serializer macro
+      drawBox3D(-25,17,-168,15,7.5,14,accent,'#0f172a','#ffffff',1.1);
+      drawBox3D(-3,17,-160,17,7.5,15,'#f59e0b','#78350f','#fef08a',1.1);
       spatialPins.push({pos:[-14,33,-165],tag:'INSIDE CONTROLLER IC',label:`SERIALIZING ${journeyProgram().asm}`,hi:step.scene==='bench'});
 
       // Etched Copper Bus Traces leading from Controller Pad -> Controller IC -> CPU Socket
@@ -1060,18 +1067,15 @@ function startJourney3DLoop(){
       // PROPER REALISTIC SILICON PROCESSOR PACKAGE (EDU-R32 / EDU-C86)
       // Multi-layer ABF Substrate + SMD Capacitors + Stepped Nickel-Copper IHS
       // ======================================================================
-      // Socket Retention Frame (LGA Independent Loading Mechanism) + Steel Lever
       drawBox3D(0,16,0,114,6,114,'#475569','#1e293b','#94a3b8',1.2,16.1);
-      drawCylinder3D([62,19,-54],[62,19,58],2.2,2.2,'#cbd5e1','#f8fafc',6); // Socket retention lever arm
+      drawCylinder3D([62,19,-54],[62,19,58],2.2,2.2,'#cbd5e1','#f8fafc');
 
       const pkgAlpha=(step.scene==='pins'||step.scene==='substrate')?0.24:0.96;
-      // Organic ABF Green/Teal Package Substrate Base (96 x 4.5 x 96)
       drawBox3D(0,22,0,96,4.5,96,
         isCisc?`rgba(16,64,92,${pkgAlpha})`:`rgba(16,78,48,${pkgAlpha})`,
         `rgba(8,36,24,${pkgAlpha})`,
         gold,1.3
       );
-      // 16 Miniature SMD Ceramic Decoupling Capacitors mounted on the package substrate perimeter
       if(pkgAlpha>0.5){
         for(let sc=-36;sc<=36;sc+=18){
           drawBox3D(sc,26.5,-43,4.2,2.2,2.4,'#b45309','#78350f','#e2e8f0',0.7);
@@ -1080,7 +1084,6 @@ function startJourney3DLoop(){
           drawBox3D(43,26.5,sc,2.4,2.2,4.2,'#b45309','#78350f','#e2e8f0',0.7);
         }
       }
-      // Stepped Nickel-Plated Copper Integrated Heat Spreader (IHS): Lower flange + Upper plateau
       drawBox3D(0,26.5,0,78,5.5,78,
         `rgba(180,192,204,${pkgAlpha})`,
         `rgba(100,114,128,${pkgAlpha})`,
@@ -1091,7 +1094,6 @@ function startJourney3DLoop(){
         `rgba(125,138,152,${pkgAlpha})`,
         accent,1.5
       );
-      // Laser-etched processor nomenclature on top of the nickel IHS lid
       const ihsTop=project(0,37.2,0);
       if(ihsTop&&ihsTop.z<560&&pkgAlpha>0.5){
         ctx.save();
@@ -1110,6 +1112,74 @@ function startJourney3DLoop(){
         label:isCisc?'EDU-C86 · NICKEL IHS & ABF SUBSTRATE':'EDU-R32 · NICKEL IHS & ABF SUBSTRATE',
         hi:step.scene==='package'
       });
+
+      // ----------------------------------------------------------------------
+      // SMOOTH, ORGANIC, ANATOMICALLY SCULPTED 3D ENGINEER HANDS & LOGIC PROBE
+      // (Rendered AFTER the Motherboard & Keypad for true foreground occlusion!)
+      // ----------------------------------------------------------------------
+      if(step.scene==='outside'||step.scene==='bench'||step.scene==='board'){
+        // 1. LEFT ARM, HAND & HIGH-FREQUENCY OSCILLOSCOPE LOGIC PROBE
+        // Coaxial cable curving smoothly from Oscilloscope CH1 BNC (-255,11,-83) to Probe tail (-130,45,-184)
+        drawSmoothCapsule3D([-255,11,-83],[-205,48,-135],1.8,1.8,'#334155','#64748b');
+        drawSmoothCapsule3D([-205,48,-135],[-130,45,-184],1.8,1.9,'#334155','#64748b');
+
+        // Left Forearm Sleeve entering from far-left offscreen (-290,94,-335) -> Cuff (-152,50,-212)
+        drawSmoothCapsule3D([-290,94,-335],[-152,50,-212],18,13.5,'#1e293b','#475569','rgba(15,23,42,0.7)');
+        // Left Blue ESD Wristband & Wrist
+        drawSmoothCapsule3D([-152,50,-212],[-143,45,-200],13.2,11.5,'#0284c7','#38bdf8');
+        drawSmoothCapsule3D([-143,45,-200],[-126,39,-184],11.2,12.8,'#d99b72','#f3c6a4');
+
+        // Machined Aluminum & Knurled Rubber Oscilloscope Logic Probe held in Left Hand
+        drawSmoothCapsule3D([-130,45,-184],[-70,33,-173],4.4,3.5,'#1e293b','#64748b','#0f172a'); // Ergonomic rubber probe grip
+        drawSmoothCapsule3D([-70,33,-173],[-58,31,-171],3.8,3.6,accent,'#ffffff'); // Illuminated probe trigger collar
+        drawSmoothCapsule3D([-58,31,-171],[-26,24.5,-166.5],2.8,1.4,'#cbd5e1','#ffffff'); // Tapered stainless steel barrel
+        drawLine3D([-26,24.5,-166.5],[-14,22,-165],'#fde047',3.0); // Gold spring-loaded pogo needle tip
+
+        // Left Hand Articulated Fingers wrapping naturally around the Logic Probe barrel
+        const lFingers=[
+          [[-126,36,-184],[-108,33,-176],[-92,33,-174],3.8], // Left Thumb supporting probe underside
+          [[-120,43,-181],[-102,41,-175],[-84,36,-173],3.6], // Left Index finger along top of probe collar
+          [[-122,40,-178],[-105,37,-172],[-90,33,-171],3.5], // Left Middle finger wrapped around grip
+          [[-125,36,-176],[-110,33,-170],[-98,30,-170],3.3]  // Left Ring finger
+        ];
+        for(const lf of lFingers){
+          drawSmoothCapsule3D(lf[0],lf[1],lf[3],lf[3]*0.86,'#d99b72','#f3c6a4','rgba(110,62,38,0.4)');
+          drawSmoothCapsule3D(lf[1],lf[2],lf[3]*0.86,lf[3]*0.72,'#e0a67e','#f7d2b5','rgba(110,62,38,0.4)');
+          drawFingernail3D(lf[2],lf[1],lf[3]*0.72,false);
+        }
+        spatialPins.push({pos:[-68,46,-172],tag:'SIGNAL INJECTION',label:'HIGH-FREQ LOGIC PROBE → CONTROLLER',hi:step.scene==='outside'||step.scene==='bench'});
+
+        // 2. RIGHT ARM & SCULPTED ANATOMICAL HAND PRESSING "EXECUTE" ON CONTROLLER PAD
+        // Tailored Lab Coat Forearm entering smoothly from lower-left foreground (-125,96,-445) -> Wrist (-85,52,-314)
+        drawSmoothCapsule3D([-125,96,-445],[-85,52,-314],19,13.8,'#1e293b','#475569','rgba(15,23,42,0.7)');
+        // White Dress Shirt Cuff + Blue Anti-Static ESD Wristband with metallic snap
+        drawSmoothCapsule3D([-85,52,-314],[-82,48,-302],13.2,12.2,'#0284c7','#7dd3fc');
+        // Anatomical Wrist & Sculpted Metacarpal Palm Arch (composed of smooth overlapping 3D skin capsules)
+        drawSmoothCapsule3D([-82,48,-302],[-76,41,-280],11.8,14.2,'#d99b72','#f3c6a4');
+        drawSmoothCapsule3D([-87,39,-282],[-67,40,-276],11.5,11.0,'#d99b72','#f3c6a4');
+        drawSmoothCapsule3D([-89,37,-273],[-66,38,-269],9.5,9.2,'#e0a67e','#f5ccb0');
+
+        // 5 Multi-Jointed Right-Hand Fingers (MCP Knuckle -> PIP Joint -> DIP Joint -> Fingertip + Glossy Fingernail)
+        const rHandFingers=[
+          // Thumb (opposable, angled inward to stabilize hand on controller bezel)
+          {mcp:[-92,36,-280], pip:[-101,32,-268], dip:[-100,28,-258], tip:[-96,25,-250], r:4.4, hi:false},
+          // Index Finger (actively pressing the glowing EXECUTE trigger key at [-65, 20, -255]!)
+          {mcp:[-66,39,-270], pip:[-65,34+pressDip*0.4,-260], dip:[-65,27+pressDip*0.7,-255], tip:[-65,20.5+pressDip,-253], r:4.0, hi:true},
+          // Middle Finger (poised in a natural relaxed arch over adjacent keycap)
+          {mcp:[-73.5,40,-270], pip:[-73.5,35,-257], dip:[-73.5,29,-249], tip:[-73.5,24,-244], r:4.1, hi:false},
+          // Ring Finger
+          {mcp:[-81,39,-271], pip:[-81.5,34,-259], dip:[-81.5,28.5,-251], tip:[-81.5,24,-247], r:3.8, hi:false},
+          // Little Finger (Pinky)
+          {mcp:[-88,37,-273], pip:[-89,32,-262], dip:[-89.5,27,-255], tip:[-89.5,23,-251], r:3.4, hi:false}
+        ];
+        for(const fg of rHandFingers){
+          drawSmoothCapsule3D(fg.mcp,fg.pip,fg.r,fg.r*0.88,'#d99b72','#f3c6a4','rgba(105,58,34,0.38)');
+          drawSmoothCapsule3D(fg.pip,fg.dip,fg.r*0.88,fg.r*0.78,'#e0a67e','#f7d2b5','rgba(105,58,34,0.38)');
+          drawSmoothCapsule3D(fg.dip,fg.tip,fg.r*0.78,fg.r*0.68,fg.hi?'#eab896':'#e6b08a',fg.hi?'#ffffff':'#fae0cb','rgba(105,58,34,0.42)');
+          drawFingernail3D(fg.tip,fg.dip,fg.r*0.72,fg.hi);
+        }
+        spatialPins.push({pos:[-76,62,-288],tag:'HUMAN OPERATOR',label:'ENGINEER HAND · PRESSING EXECUTE',hi:step.scene==='outside'});
+      }
     }
 
     // ========================================================================
@@ -1467,6 +1537,11 @@ document.addEventListener('keydown',e=>{
   if(scrollTarget&&document.getElementById(scrollTarget)){
     $$('.reveal').forEach(el=>el.classList.add('visible'));
     document.getElementById(scrollTarget).scrollIntoView({behavior:'instant'});
+  }
+  if(params.get('only')==='core3d'){
+    $$('.reveal').forEach(el=>el.classList.add('visible'));
+    const vp=$('#coreViewport');
+    if(vp){vp.style.position='fixed';vp.style.inset='0';vp.style.zIndex='99999';vp.style.height='100vh';vp.style.margin='0';}
   }
   if(params.get('journey')==='1'){
     openJourney();
