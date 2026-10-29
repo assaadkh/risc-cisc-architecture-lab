@@ -333,12 +333,15 @@
 
     <section class="core3d-section" id="core3d">
       <div class="section-heading core3d-heading">
-        <div><p class="eyebrow"><span></span> Silicon cutaway</p><h2>Step inside a<br>3D RISC core.</h2></div>
-        <p>This interactive cutaway represents the major blocks of a small load–store processor. Rotate the package, separate its layers, and send a command through the buses inside the silicon.</p>
+        <div><p class="eyebrow"><span></span> Silicon cutaway</p><h2>Step inside<br>3D CPU cores.</h2></div>
+        <p>Switch between RISC and CISC floorplans. Rotate the package, separate its physical layers, and watch commands travel through two very different internal organizations.</p>
       </div>
 
       <div class="core3d-shell">
         <div class="core3d-toolbar">
+          <div class="core3d-archswitch" role="group" aria-label="Choose a 3D processor architecture">
+            <span>CORE ARCHITECTURE</span><button class="active" data-core-arch="risc">RISC · LOAD/STORE</button><button data-core-arch="cisc">CISC · µOP ENGINE</button>
+          </div>
           <div class="core3d-instructions" role="group" aria-label="Choose a RISC instruction">
             <button class="active" data-core-instruction="add"><code>ADD R3, R1, R2</code><span>Register arithmetic</span></button>
             <button data-core-instruction="load"><code>LW R4, 8(R1)</code><span>Load from memory</span></button>
@@ -358,11 +361,11 @@
             <div class="pin-row pins-top"></div><div class="pin-row pins-right"></div><div class="pin-row pins-bottom"></div><div class="pin-row pins-left"></div>
             <div class="chip-package">
               <span class="package-corner one"></span><span class="package-corner two"></span>
-              <div class="package-label"><small>EDU–R32</small><b>RISC CORE</b><span>32-BIT · 5-STAGE · LOAD/STORE</span></div>
+              <div class="package-label"><small id="packageCode">EDU–R32</small><b id="packageTitle">RISC CORE</b><span id="packageMeta">32-BIT · 5-STAGE · LOAD/STORE</span></div>
             </div>
             <div class="die-layer">
               <div class="die-grid"></div>
-              <svg class="core-traces" viewBox="0 0 760 440" preserveAspectRatio="none" aria-hidden="true">
+              <svg class="core-traces risc-core-element" viewBox="0 0 760 440" preserveAspectRatio="none" aria-hidden="true">
                 <path data-core-path="pc-icache" d="M110 100 H220"></path>
                 <path data-core-path="icache-decode" d="M310 100 H365"></path>
                 <path data-core-path="decode-regs" d="M465 100 H530"></path>
@@ -377,16 +380,42 @@
                 <path data-core-path="clock" d="M70 385 H690"></path>
               </svg>
               <div class="core-unit unit-clock" data-core-unit="clock"><small>GLOBAL CLOCK</small><b>CLK</b><span>1.00 GHz</span></div>
-              <div class="core-unit unit-pc3d" data-core-unit="pc"><small>PROGRAM COUNTER</small><b>PC</b><span>0x0040</span></div>
-              <div class="core-unit unit-icache" data-core-unit="icache"><small>INSTRUCTION CACHE</small><b>L1 I$</b><span>32 KiB</span></div>
-              <div class="core-unit unit-decoder3d" data-core-unit="decoder"><small>INSTRUCTION DECODE</small><b>CONTROL</b><span>opcode + fields</span></div>
-              <div class="core-unit unit-registers3d" data-core-unit="regs"><small>REGISTER FILE</small><b>32 × 32</b><span>2 read · 1 write</span></div>
-              <div class="core-unit unit-branch" data-core-unit="branch"><small>BRANCH UNIT</small><b>BRU</b><span>target + compare</span></div>
-              <div class="core-unit unit-alu3d" data-core-unit="alu"><small>EXECUTION UNIT</small><b>ALU / AGU</b><span>add · logic · address</span></div>
-              <div class="core-unit unit-dcache" data-core-unit="dcache"><small>DATA CACHE</small><b>L1 D$</b><span>32 KiB</span></div>
-              <div class="core-unit unit-writeback3d" data-core-unit="writeback"><small>RESULT BUS</small><b>WRITEBACK</b><span>commit register</span></div>
+              <div class="core-unit unit-pc3d risc-core-element" data-core-unit="pc"><small>PROGRAM COUNTER</small><b>PC</b><span>0x0040</span></div>
+              <div class="core-unit unit-icache risc-core-element" data-core-unit="icache"><small>INSTRUCTION CACHE</small><b>L1 I$</b><span>32 KiB</span></div>
+              <div class="core-unit unit-decoder3d risc-core-element" data-core-unit="decoder"><small>INSTRUCTION DECODE</small><b>CONTROL</b><span>opcode + fields</span></div>
+              <div class="core-unit unit-registers3d risc-core-element" data-core-unit="regs"><small>REGISTER FILE</small><b>32 × 32</b><span>2 read · 1 write</span></div>
+              <div class="core-unit unit-branch risc-core-element" data-core-unit="branch"><small>BRANCH UNIT</small><b>BRU</b><span>target + compare</span></div>
+              <div class="core-unit unit-alu3d risc-core-element" data-core-unit="alu"><small>EXECUTION UNIT</small><b>ALU / AGU</b><span>add · logic · address</span></div>
+              <div class="core-unit unit-dcache risc-core-element" data-core-unit="dcache"><small>DATA CACHE</small><b>L1 D$</b><span>32 KiB</span></div>
+              <div class="core-unit unit-writeback3d risc-core-element" data-core-unit="writeback"><small>RESULT BUS</small><b>WRITEBACK</b><span>commit register</span></div>
+
+              <svg class="core-traces cisc-core-element hidden" viewBox="0 0 760 440" preserveAspectRatio="none" aria-hidden="true">
+                <path data-core-path="c-front-length" d="M105 100 H190"></path>
+                <path data-core-path="c-length-decode" d="M285 100 H330"></path>
+                <path data-core-path="c-decode-ucode" d="M430 100 H490"></path>
+                <path data-core-path="c-decode-queue" d="M430 125 H620"></path>
+                <path data-core-path="c-ucode-queue" d="M590 100 H620"></path>
+                <path data-core-path="c-queue-sched" d="M680 145 V220 H460"></path>
+                <path data-core-path="c-rename-sched" d="M290 270 H370"></path>
+                <path data-core-path="c-sched-exec" d="M475 270 H545"></path>
+                <path data-core-path="c-exec-lsu" d="M640 270 H675"></path>
+                <path data-core-path="c-lsu-exec" d="M675 295 H640"></path>
+                <path data-core-path="c-exec-retire" d="M590 315 V360"></path>
+                <path data-core-path="c-lsu-retire" d="M700 315 V360 H640"></path>
+                <path data-core-path="c-retire-rename" d="M540 385 H245 V315"></path>
+              </svg>
+              <div class="core-unit c-unit-front cisc-core-element hidden" data-core-unit="front"><small>FETCH / ALIGN</small><b>BYTE FRONT END</b><span>16-byte window</span></div>
+              <div class="core-unit c-unit-length cisc-core-element hidden" data-core-unit="length"><small>BOUNDARY DETECTION</small><b>LENGTH DEC</b><span>1–15 bytes</span></div>
+              <div class="core-unit c-unit-decode cisc-core-element hidden" data-core-unit="decodec"><small>INSTRUCTION DECODE</small><b>COMPLEX DEC</b><span>opcode · ModR/M · SIB</span></div>
+              <div class="core-unit c-unit-ucode cisc-core-element hidden" data-core-unit="ucode"><small>MICROCODE STORE</small><b>µCODE ROM</b><span>complex sequences</span></div>
+              <div class="core-unit c-unit-queue cisc-core-element hidden" data-core-unit="queue"><small>DECODED OPERATIONS</small><b>µOP QUEUE</b><span>buffer + fuse</span></div>
+              <div class="core-unit c-unit-rename cisc-core-element hidden" data-core-unit="rename"><small>REGISTER MAPPING</small><b>RENAME</b><span>architectural → physical</span></div>
+              <div class="core-unit c-unit-sched cisc-core-element hidden" data-core-unit="sched"><small>OUT-OF-ORDER WINDOW</small><b>SCHEDULER</b><span>wake · select · issue</span></div>
+              <div class="core-unit c-unit-exec cisc-core-element hidden" data-core-unit="exec"><small>INTEGER CLUSTER</small><b>ALU × 3</b><span>arithmetic · flags</span></div>
+              <div class="core-unit c-unit-lsu cisc-core-element hidden" data-core-unit="lsu"><small>MEMORY ENGINE</small><b>LOAD / STORE</b><span>AGU + L1 D$</span></div>
+              <div class="core-unit c-unit-retire cisc-core-element hidden" data-core-unit="retire"><small>REORDER BUFFER</small><b>RETIRE</b><span>commit in order</span></div>
               <div class="data-pulse" id="corePulse"><i></i><span id="pulseValue">PC</span></div>
-              <div class="die-mark">RISC–V STYLE EDUCATIONAL DATAPATH · NOT TO SCALE</div>
+              <div class="die-mark" id="dieMark">RISC–V STYLE EDUCATIONAL DATAPATH · NOT TO SCALE</div>
             </div>
             <div class="substrate-layer"><span></span><span></span><span></span><span></span></div>
           </div>
@@ -412,8 +441,8 @@
       </div>
 
       <div class="core3d-caption">
-        <div><span class="deep-label">What makes it RISC?</span><p>Instructions use regular fields, arithmetic stays register-to-register, and only explicit load/store instructions enter the data cache. The five pipeline stages can overlap across different instructions.</p></div>
-        <div><span class="deep-label">What is physically simplified?</span><p>A real core contains many more buffers, predictors, translation structures, clock trees, power domains, and millions of transistors. This model preserves the instructional data flow rather than literal floorplanning.</p></div>
+        <div><span class="deep-label" id="coreCaptionTitle">What makes it RISC?</span><p id="coreCaptionText">Instructions use regular fields, arithmetic stays register-to-register, and only explicit load/store instructions enter the data cache. The five pipeline stages can overlap across different instructions.</p></div>
+        <div><span class="deep-label">What is physically simplified?</span><p>A real core contains many more buffers, predictors, translation structures, clock trees, power domains, and millions of transistors. These models preserve instructional data flow rather than literal floorplanning.</p></div>
       </div>
     </section>
 
