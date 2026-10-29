@@ -14,7 +14,7 @@
       <span>ARCHITECTURE <b>LAB</b></span>
     </a>
     <nav aria-label="Main navigation">
-      <a href="#simulator">Simulator</a><a href="#deep-dive">CPU Deep Dive</a><a href="#flowchart">Flowchart</a><a href="#anatomy">Anatomy</a><a href="#learn">Learn</a>
+      <a href="#simulator">Simulator</a><a href="#deep-dive">CPU Deep Dive</a><a href="#flowchart">Flowchart</a><a href="#core3d">3D Core</a><a href="#anatomy">Anatomy</a><a href="#learn">Learn</a>
     </nav>
     <button class="icon-button" id="themeBtn" aria-label="Toggle theme">◐</button>
   </header>
@@ -329,6 +329,92 @@
       </div>
 
       <div class="flow-legend"><span><i class="shape term"></i> Start / finish</span><span><i class="shape proc"></i> Processor action</span><span><i class="shape decision"></i> Decision</span><span><i class="shape input"></i> Memory / data transfer</span></div>
+    </section>
+
+    <section class="core3d-section" id="core3d">
+      <div class="section-heading core3d-heading">
+        <div><p class="eyebrow"><span></span> Silicon cutaway</p><h2>Step inside a<br>3D RISC core.</h2></div>
+        <p>This interactive cutaway represents the major blocks of a small load–store processor. Rotate the package, separate its layers, and send a command through the buses inside the silicon.</p>
+      </div>
+
+      <div class="core3d-shell">
+        <div class="core3d-toolbar">
+          <div class="core3d-instructions" role="group" aria-label="Choose a RISC instruction">
+            <button class="active" data-core-instruction="add"><code>ADD R3, R1, R2</code><span>Register arithmetic</span></button>
+            <button data-core-instruction="load"><code>LW R4, 8(R1)</code><span>Load from memory</span></button>
+            <button data-core-instruction="branch"><code>BEQ R1, R2, +16</code><span>Conditional branch</span></button>
+          </div>
+          <div class="view-controls">
+            <label for="coreRotation"><span>Rotate core</span><output id="coreRotationOut">−28°</output></label>
+            <input id="coreRotation" type="range" min="-55" max="20" value="-28">
+            <button id="explodeCore"><span>Separate layers</span><b>↕</b></button>
+          </div>
+        </div>
+
+        <div class="core3d-viewport" id="coreViewport">
+          <div class="core3d-grid"></div>
+          <div class="core-shadow"></div>
+          <div class="chip-model" id="chipModel">
+            <div class="pin-row pins-top"></div><div class="pin-row pins-right"></div><div class="pin-row pins-bottom"></div><div class="pin-row pins-left"></div>
+            <div class="chip-package">
+              <span class="package-corner one"></span><span class="package-corner two"></span>
+              <div class="package-label"><small>EDU–R32</small><b>RISC CORE</b><span>32-BIT · 5-STAGE · LOAD/STORE</span></div>
+            </div>
+            <div class="die-layer">
+              <div class="die-grid"></div>
+              <svg class="core-traces" viewBox="0 0 760 440" preserveAspectRatio="none" aria-hidden="true">
+                <path data-core-path="pc-icache" d="M110 100 H220"></path>
+                <path data-core-path="icache-decode" d="M310 100 H365"></path>
+                <path data-core-path="decode-regs" d="M465 100 H530"></path>
+                <path data-core-path="regs-alu" d="M600 145 V225 H455"></path>
+                <path data-core-path="decode-alu" d="M415 145 V225"></path>
+                <path data-core-path="alu-dcache" d="M500 275 H575"></path>
+                <path data-core-path="alu-writeback" d="M455 305 V355 H545"></path>
+                <path data-core-path="dcache-writeback" d="M630 305 V355 H605"></path>
+                <path data-core-path="writeback-regs" d="M600 355 H690 V145 H650"></path>
+                <path data-core-path="alu-branch" d="M405 275 H245"></path>
+                <path data-core-path="branch-pc" d="M180 265 H90 V145"></path>
+                <path data-core-path="clock" d="M70 385 H690"></path>
+              </svg>
+              <div class="core-unit unit-clock" data-core-unit="clock"><small>GLOBAL CLOCK</small><b>CLK</b><span>1.00 GHz</span></div>
+              <div class="core-unit unit-pc3d" data-core-unit="pc"><small>PROGRAM COUNTER</small><b>PC</b><span>0x0040</span></div>
+              <div class="core-unit unit-icache" data-core-unit="icache"><small>INSTRUCTION CACHE</small><b>L1 I$</b><span>32 KiB</span></div>
+              <div class="core-unit unit-decoder3d" data-core-unit="decoder"><small>INSTRUCTION DECODE</small><b>CONTROL</b><span>opcode + fields</span></div>
+              <div class="core-unit unit-registers3d" data-core-unit="regs"><small>REGISTER FILE</small><b>32 × 32</b><span>2 read · 1 write</span></div>
+              <div class="core-unit unit-branch" data-core-unit="branch"><small>BRANCH UNIT</small><b>BRU</b><span>target + compare</span></div>
+              <div class="core-unit unit-alu3d" data-core-unit="alu"><small>EXECUTION UNIT</small><b>ALU / AGU</b><span>add · logic · address</span></div>
+              <div class="core-unit unit-dcache" data-core-unit="dcache"><small>DATA CACHE</small><b>L1 D$</b><span>32 KiB</span></div>
+              <div class="core-unit unit-writeback3d" data-core-unit="writeback"><small>RESULT BUS</small><b>WRITEBACK</b><span>commit register</span></div>
+              <div class="data-pulse" id="corePulse"><i></i><span id="pulseValue">PC</span></div>
+              <div class="die-mark">RISC–V STYLE EDUCATIONAL DATAPATH · NOT TO SCALE</div>
+            </div>
+            <div class="substrate-layer"><span></span><span></span><span></span><span></span></div>
+          </div>
+
+          <div class="core3d-overlay top-left"><small>VIEW</small><b>ISOMETRIC CUTAWAY</b></div>
+          <div class="core3d-overlay top-right"><small>CLOCK</small><b id="coreClock">CYCLE 0</b></div>
+          <div class="axis-widget"><i class="axis-x">X</i><i class="axis-y">Y</i><i class="axis-z">Z</i></div>
+        </div>
+
+        <div class="core3d-console">
+          <div class="console-phase"><span id="corePhaseNo">00</span><div><small>CURRENT INTERNAL ACTION</small><h3 id="corePhaseTitle">Ready at the program counter</h3><p id="corePhaseText">Select an instruction, then use Run inside core or Step pulse to follow its values through the chip.</p></div></div>
+          <div class="console-bus"><small>VALUE IN FLIGHT</small><code id="coreBusValue">PC = 0x0040</code><div class="bit-lights" id="bitLights"></div></div>
+          <div class="console-controls"><button id="coreReset" aria-label="Reset 3D core">↺</button><button id="coreStep">Step pulse <b>→</b></button><button id="coreRun">Run inside core <b>▶</b></button></div>
+        </div>
+
+        <div class="core3d-legend">
+          <div><i class="legend-color fetch"></i><span><b>Fetch</b>PC and instruction bytes</span></div>
+          <div><i class="legend-color control"></i><span><b>Control</b>Decode and steering signals</span></div>
+          <div><i class="legend-color execute"></i><span><b>Execute</b>Operands and ALU result</span></div>
+          <div><i class="legend-color memory"></i><span><b>Memory</b>Address and cache data</span></div>
+          <div><i class="legend-color commit"></i><span><b>Commit</b>Architectural state change</span></div>
+        </div>
+      </div>
+
+      <div class="core3d-caption">
+        <div><span class="deep-label">What makes it RISC?</span><p>Instructions use regular fields, arithmetic stays register-to-register, and only explicit load/store instructions enter the data cache. The five pipeline stages can overlap across different instructions.</p></div>
+        <div><span class="deep-label">What is physically simplified?</span><p>A real core contains many more buffers, predictors, translation structures, clock trees, power domains, and millions of transistors. This model preserves the instructional data flow rather than literal floorplanning.</p></div>
+      </div>
     </section>
 
     <section class="anatomy" id="anatomy">
