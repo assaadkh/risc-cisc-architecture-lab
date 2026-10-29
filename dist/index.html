@@ -279,7 +279,7 @@
               <div class="flow-diamond"><b>Memory<br>command?</b></div>
             </div>
             <div class="flow-branch">
-              <div class="branch-side"><span>NO · ALU / BRANCH</span><i></i><div class="flow-node compact process" data-flow-step="4"><small>3A · EXECUTE</small><b>One simple ALU operation</b><em>ADD · SUB · AND · compare</em></div></div>
+              <div class="branch-side"><span>NO · ALU / BRANCH</span><i></i><div class="flow-node compact process" data-flow-step="4"><small>3A · EXECUTE</small><b>One simple ALU operation</b><em>ADD · SUB · AND · compare</em></div><div class="flow-arrow short"><i></i></div><div class="flow-node compact bypass" data-flow-step="6"><small>4 · MEMORY BYPASS</small><b>Forward the ALU result</b><em>no data-memory request</em></div></div>
               <div class="branch-side"><span>YES · LOAD / STORE</span><i></i><div class="flow-node compact process" data-flow-step="5"><small>3B · ADDRESS</small><b>ALU forms memory address</b><em>base register + offset</em></div><div class="flow-arrow short"><i></i></div><div class="flow-node compact io" data-flow-step="6"><small>4 · MEMORY</small><b>Read or write data memory</b><em>only LOAD and STORE</em></div></div>
             </div>
             <div class="flow-merge"><i></i><span>merge result path</span></div>
