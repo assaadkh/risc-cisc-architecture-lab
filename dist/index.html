@@ -354,6 +354,11 @@
           </div>
         </div>
 
+        <div class="journey-launchbar">
+          <div><span class="journey-live-dot"></span><small>IMMERSIVE MODE</small><b>Become the data. Travel through the processor.</b></div>
+          <button id="enterJourney">Begin 3D journey <strong>↗</strong></button>
+        </div>
+
         <div class="core3d-viewport" id="coreViewport">
           <div class="core3d-grid"></div>
           <div class="core-shadow"></div>
@@ -445,6 +450,46 @@
         <div><span class="deep-label">What is physically simplified?</span><p>A real core contains many more buffers, predictors, translation structures, clock trees, power domains, and millions of transistors. These models preserve instructional data flow rather than literal floorplanning.</p></div>
       </div>
     </section>
+
+    <div class="cpu-journey" id="cpuJourney" hidden role="dialog" aria-modal="true" aria-labelledby="journeyTitle">
+      <div class="journey-stars" id="journeyStars" aria-hidden="true"></div>
+      <div class="journey-speedlines" aria-hidden="true"></div>
+      <div class="journey-vignette" aria-hidden="true"></div>
+
+      <header class="journey-hud">
+        <div class="journey-brand"><span class="journey-live-dot"></span><div><small>LIVE SILICON EXPEDITION</small><b id="journeyArch">RISC CORE · ADD R3, R1, R2</b></div></div>
+        <div class="journey-progress"><span id="journeyProgressText">CHECKPOINT 1 / 7</span><div><i id="journeyProgressBar"></i></div></div>
+        <div class="journey-hud-actions"><button id="journeySound" aria-label="Toggle journey sound">SOUND OFF</button><button id="closeJourney" aria-label="Exit 3D journey">EXIT ×</button></div>
+      </header>
+
+      <div class="journey-world" id="journeyWorld">
+        <div class="journey-tunnel" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="journey-portal" aria-hidden="true"><i></i><i></i><i></i><span></span></div>
+        <div class="journey-chamber" id="journeyChamber">
+          <div class="chamber-floor"></div><div class="chamber-ceiling"></div><div class="chamber-wall left"></div><div class="chamber-wall right"></div>
+          <div class="chamber-core">
+            <span class="chamber-overline" id="journeyUnitType">PROGRAM COUNTER</span>
+            <div class="chamber-symbol" id="journeySymbol">PC</div>
+            <h2 id="journeyTitle">Entering the program counter</h2>
+            <p id="journeyShort">Your data packet begins at the address of the next instruction.</p>
+            <div class="chamber-value"><small>PAYLOAD</small><code id="journeyPayload">PC = 0x0040</code></div>
+          </div>
+          <div class="journey-orbit one"></div><div class="journey-orbit two"></div><div class="journey-orbit three"></div>
+        </div>
+        <div class="journey-packet" id="journeyPacket" aria-hidden="true"><i></i><i></i><b>YOU</b></div>
+        <div class="journey-bits" id="journeyBits" aria-hidden="true"></div>
+        <div class="journey-sidecard left-card"><small>PREVIOUS</small><b id="journeyPrevious">Package entry</b></div>
+        <div class="journey-sidecard right-card"><small>NEXT PORTAL</small><b id="journeyNext">Instruction cache</b></div>
+      </div>
+
+      <div class="journey-narration">
+        <div class="narration-index" id="journeyIndex">01</div>
+        <div class="narration-copy"><span id="journeyStage">STAGE · FETCH</span><h3 id="journeyNarrationTitle">The trip begins</h3><p id="journeyNarrationText">The program counter puts the next instruction address onto the fetch bus. You are that address, moving toward instruction memory.</p></div>
+        <div class="journey-telemetry"><div><small>TRAVEL VELOCITY</small><b id="journeyVelocity">0.0 units/cycle</b></div><div><small>PACKET STATE</small><b id="journeyPacketState">ADDRESS</b></div></div>
+        <div class="journey-controls"><button id="journeyBack" aria-label="Previous checkpoint">←</button><button id="journeyAuto">Auto tour <b>▶</b></button><button id="journeyNextButton">Travel onward <b>→</b></button></div>
+      </div>
+      <div class="journey-help">← → navigate · SPACE auto tour · ESC exit</div>
+    </div>
 
     <section class="anatomy" id="anatomy">
       <div class="section-heading"><div><p class="eyebrow"><span></span> Under the hood</p><h2>Why they behave differently</h2></div></div>
