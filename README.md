@@ -11,10 +11,11 @@ An interactive, database-free learning simulator that compares simplified RISC a
 - Worked CISC examples for `MOV`, memory-operand `ADD`, `REP MOVSD`, and `PUSH`
 - Phase-by-phase buses, control signals, calculations, and before/after state
 - Animated side-by-side RISC and CISC execution flowcharts with decision branches
-- Rotatable, exploded 3D RISC and CISC processor cutaways with architecture-specific internal data pulses
-- Full-screen first-person CPU journey with portals, particles, checkpoint narration, auto-tour, keyboard controls, and optional synthesized sound
+- Rotatable, exploded 3D RISC (`EDU-R32`) and CISC (`EDU-C86`) processor cutaways with IHS lid, silicon die, substrate, copper vias, pin grid array, and drag-to-orbit pitch/yaw controls
+- Full-screen 60fps 3D Architecture Journey (`#journeyCanvas`) starting at a hardware test bench with the engineer's 3D hands pressing `EXECUTE` on the controller and holding a logic probe, going inside the controller IC, and physically transporting the visitor (`YOU`) right beside the copper PCB traces, gold contacts, vertical copper vias, and on-die silicon interconnects alongside the moving data packets
+- Connected clickable route map, spatial 3D callout pins, checkpoint narration, auto-tour, restart, keyboard controls (`ArrowLeft`, `ArrowRight`, `Space`, `Escape`), and optional synthesized sound
 - Live registers, memory, hazards, CPI, cycle count, and code-size metrics
-- Three equivalent workload presets
+- Four equivalent workload presets (including memory-operand addition)
 - Optional L1-cache latency model
 - Guided architecture explanations and a knowledge quiz
 - Responsive light and dark interfaces

@@ -26,7 +26,9 @@
         <h1>Two philosophies.<br><em>One computation.</em></h1>
         <p class="lede">Run the same algorithm through simplified RISC and CISC machines. Watch instructions, pipelines, registers, memory traffic, and performance diverge—one cycle at a time.</p>
         <div class="hero-actions">
-          <a class="btn primary" href="#simulator">Launch simulator <b>↓</b></a>
+          <a class="btn primary" href="#core3d">Explore 3D Core & Journey <b>↓</b></a>
+          <button class="btn journey-cta" id="heroJourneyBtn">BEGIN 3D JOURNEY <b>↗</b></button>
+          <a class="btn ghost" href="#simulator">Launch simulator <b>↓</b></a>
           <button class="btn ghost" id="tourBtn">Take the 60-second tour</button>
         </div>
       </div>
@@ -57,6 +59,7 @@
             <label for="presetSelect">Program preset</label>
             <select id="presetSelect">
               <option value="sum">Sum four integers</option>
+              <option value="memadd">Add memory value to register</option>
               <option value="expression">Evaluate (A + B) × C</option>
               <option value="copy">Copy a memory block</option>
             </select>
@@ -340,26 +343,29 @@
       <div class="core3d-shell">
         <div class="core3d-toolbar">
           <div class="core3d-archswitch" role="group" aria-label="Choose a 3D processor architecture">
-            <span>CORE ARCHITECTURE</span><button class="active" data-core-arch="risc">RISC · LOAD/STORE</button><button data-core-arch="cisc">CISC · µOP ENGINE</button>
+            <span>CORE ARCHITECTURE</span><button class="active" data-core-arch="risc">RISC · LOAD/STORE (EDU-R32)</button><button data-core-arch="cisc">CISC · µOP ENGINE (EDU-C86)</button>
           </div>
           <div class="core3d-instructions" role="group" aria-label="Choose a RISC instruction">
             <button class="active" data-core-instruction="add"><code>ADD R3, R1, R2</code><span>Register arithmetic</span></button>
             <button data-core-instruction="load"><code>LW R4, 8(R1)</code><span>Load from memory</span></button>
+            <button data-core-instruction="store"><code>SW R2, 12(R1)</code><span>Store to memory</span></button>
             <button data-core-instruction="branch"><code>BEQ R1, R2, +16</code><span>Conditional branch</span></button>
           </div>
           <div class="view-controls">
-            <label for="coreRotation"><span>Rotate core</span><output id="coreRotationOut">−28°</output></label>
-            <input id="coreRotation" type="range" min="-55" max="20" value="-28">
+            <label for="coreRotation"><span>Rotate yaw</span><output id="coreRotationOut">−28°</output></label>
+            <input id="coreRotation" type="range" min="-180" max="180" value="-28">
+            <label for="coreTilt"><span>Tilt pitch</span><output id="coreTiltOut">57°</output></label>
+            <input id="coreTilt" type="range" min="25" max="78" value="57">
             <button id="explodeCore"><span>Separate layers</span><b>↕</b></button>
           </div>
         </div>
 
         <div class="journey-launchbar">
-          <div><span class="journey-live-dot"></span><small>IMMERSIVE MODE</small><b>Become the data. Travel through the processor.</b></div>
-          <button id="enterJourney">Begin 3D journey <strong>↗</strong></button>
+          <div><span class="journey-live-dot"></span><small>IMMERSIVE MODE</small><b>Become the data. Travel from outside the lab bench onto the silicon die.</b></div>
+          <button id="enterJourney">BEGIN 3D JOURNEY <strong>↗</strong></button>
         </div>
 
-        <div class="core3d-viewport" id="coreViewport">
+        <div class="core3d-viewport" id="coreViewport" title="Drag to rotate 3D core in any direction">
           <div class="core3d-grid"></div>
           <div class="core-shadow"></div>
           <div class="chip-model" id="chipModel">
@@ -367,6 +373,10 @@
             <div class="chip-package">
               <span class="package-corner one"></span><span class="package-corner two"></span>
               <div class="package-label"><small id="packageCode">EDU–R32</small><b id="packageTitle">RISC CORE</b><span id="packageMeta">32-BIT · 5-STAGE · LOAD/STORE</span></div>
+            </div>
+            <div class="ihs-lid-layer" aria-hidden="true">
+              <span class="ihs-mark" id="ihsLidMark">EDU-R32 · INTEGRATED HEAT SPREADER</span>
+              <small>EXTERNAL CPU PACKAGE SHIELD</small>
             </div>
             <div class="die-layer">
               <div class="die-grid"></div>
@@ -422,10 +432,14 @@
               <div class="data-pulse" id="corePulse"><i></i><span id="pulseValue">PC</span></div>
               <div class="die-mark" id="dieMark">RISC–V STYLE EDUCATIONAL DATAPATH · NOT TO SCALE</div>
             </div>
-            <div class="substrate-layer"><span></span><span></span><span></span><span></span></div>
+            <div class="substrate-layer">
+              <span></span><span></span><span></span><span></span>
+              <i class="sub-via v1"></i><i class="sub-via v2"></i><i class="sub-via v3"></i><i class="sub-via v4"></i>
+              <small class="substrate-tag">MULTILAYER PACKAGE SUBSTRATE & COPPER VIAS</small>
+            </div>
           </div>
 
-          <div class="core3d-overlay top-left"><small>VIEW</small><b>ISOMETRIC CUTAWAY</b></div>
+          <div class="core3d-overlay top-left"><small>VIEW · DRAG TO ORBIT</small><b id="coreViewMode">ISOMETRIC 3D CUTAWAY</b></div>
           <div class="core3d-overlay top-right"><small>CLOCK</small><b id="coreClock">CYCLE 0</b></div>
           <div class="axis-widget"><i class="axis-x">X</i><i class="axis-y">Y</i><i class="axis-z">Z</i></div>
         </div>
@@ -457,13 +471,20 @@
       <div class="journey-vignette" aria-hidden="true"></div>
 
       <header class="journey-hud">
-        <div class="journey-brand"><span class="journey-live-dot"></span><div><small>LIVE SILICON EXPEDITION</small><b id="journeyArch">RISC CORE · ADD R3, R1, R2</b></div></div>
-        <div class="journey-progress"><span id="journeyProgressText">CHECKPOINT 1 / 7</span><div><i id="journeyProgressBar"></i></div></div>
-        <div class="journey-hud-actions"><button id="journeySound" aria-label="Toggle journey sound">SOUND OFF</button><button id="closeJourney" aria-label="Exit 3D journey">EXIT ×</button></div>
+        <div class="journey-brand"><span class="journey-live-dot"></span><div><small id="journeyHeaderLabel">RISC Journey</small><b id="journeyArch">RISC Journey · ADD R3, R1, R2</b></div></div>
+        <div class="journey-progress"><span id="journeyProgressText">CHECKPOINT 01 / 15</span><div><i id="journeyProgressBar"></i></div></div>
+        <div class="journey-hud-actions">
+          <button id="journeyRestart" aria-label="Restart journey">RESTART ↺</button>
+          <button id="journeySound" aria-label="Toggle journey sound">SOUND OFF</button>
+          <button id="closeJourney" aria-label="Exit 3D journey">EXIT ×</button>
+        </div>
       </header>
 
       <div class="journey-world" id="journeyWorld">
         <div class="journey-route-map" id="journeyRouteMap" aria-label="Journey route"></div>
+        <canvas class="journey-canvas" id="journeyCanvas"></canvas>
+        <div class="journey-spatial-labels" id="journeySpatialLabels" aria-hidden="true"></div>
+
         <div class="journey-environment" id="journeyEnvironment" aria-hidden="true">
           <div class="lab-wall"><i></i><i></i><b>ARCHITECTURE LAB · SIGNAL ENTRY</b></div>
           <div class="lab-bench"><span class="bench-edge">ELECTRONICS WORKBENCH</span></div>
@@ -475,43 +496,45 @@
             <div class="journey-package"><span id="journeyPackageMark">RISC · EDU-R32</span><b>CPU</b><i></i><i></i><i></i><i></i></div>
           </div>
           <div class="pin-tunnel"><div id="journeyPins"></div><span>PACKAGE I/O CORRIDOR</span></div>
-          <div class="substrate-world"><div class="substrate-layer top-layer"></div><div class="substrate-layer mid-layer"></div><div class="substrate-layer die-layer"></div><div class="via-field" id="journeyVias"></div><span>SIGNAL VIA · PACKAGE → DIE</span></div>
+          <div class="substrate-world"><div class="j-sub-layer top-layer"></div><div class="j-sub-layer mid-layer"></div><div class="j-sub-layer bot-die-layer"></div><div class="via-field" id="journeyVias"></div><span>SIGNAL VIA · PACKAGE → DIE</span></div>
           <div class="die-world"><div class="die-grid"></div><div class="die-gate g1">FRONT END</div><div class="die-gate g2">EXECUTION</div><div class="die-gate g3">MEMORY</div><div class="die-road"><i></i></div><span>SILICON DIE · ON-DIE INTERCONNECT</span></div>
         </div>
-        <div class="journey-tunnel" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
-        <div class="journey-portal" aria-hidden="true"><i></i><i></i><i></i><span></span></div>
+
         <div class="journey-chamber" id="journeyChamber">
-          <div class="chamber-floor"></div><div class="chamber-ceiling"></div><div class="chamber-wall left"></div><div class="chamber-wall right"></div>
           <div class="chamber-core">
-            <span class="chamber-overline" id="journeyUnitType">PROGRAM COUNTER</span>
-            <div class="chamber-symbol" id="journeySymbol">PC</div>
-            <h2 id="journeyTitle">Entering the program counter</h2>
-            <p id="journeyShort">Your data packet begins at the address of the next instruction.</p>
-            <div class="chamber-value"><small>PAYLOAD</small><code id="journeyPayload">PC = 0x0040</code></div>
+            <div class="chamber-head-row">
+              <span class="chamber-overline" id="journeyUnitType">ARCHITECTURE LAB</span>
+              <div class="chamber-symbol" id="journeySymbol">LAB</div>
+            </div>
+            <h2 id="journeyTitle">Begin outside the electronics bench</h2>
+            <p id="journeyShort">You start in the lab, outside the computer.</p>
+            <div class="chamber-value"><small>PAYLOAD</small><code id="journeyPayload">Destination · RISC CPU</code></div>
           </div>
-          <div class="journey-orbit one"></div><div class="journey-orbit two"></div><div class="journey-orbit three"></div>
         </div>
-        <div class="journey-packet" id="journeyPacket" aria-hidden="true"><i></i><i></i><b>YOU</b></div>
+
         <div class="journey-bits" id="journeyBits" aria-hidden="true"></div>
-        <div class="journey-sidecard left-card"><small>PREVIOUS</small><b id="journeyPrevious">Package entry</b></div>
-        <div class="journey-sidecard right-card"><small>NEXT PORTAL</small><b id="journeyNext">Instruction cache</b></div>
+        <div class="journey-sidecard left-card"><small>PREVIOUS LOCATION</small><b id="journeyPrevious">Starting point</b></div>
+        <div class="journey-sidecard right-card"><small>NEXT DESTINATION</small><b id="journeyNext">Electronics workbench</b></div>
       </div>
 
       <div class="journey-narration">
         <div class="narration-index" id="journeyIndex">01</div>
-        <div class="narration-copy"><span id="journeyStage">STAGE · FETCH</span><h3 id="journeyNarrationTitle">The trip begins</h3><p id="journeyNarrationText">The program counter puts the next instruction address onto the fetch bus. You are that address, moving toward instruction memory.</p></div>
-        <div class="journey-telemetry"><div><small>TRAVEL VELOCITY</small><b id="journeyVelocity">0.0 units/cycle</b></div><div><small>PACKET STATE</small><b id="journeyPacketState">ADDRESS</b></div></div>
-        <div class="journey-controls"><button id="journeyBack" aria-label="Previous checkpoint">←</button><button id="journeyAuto">Auto tour <b>▶</b></button><button id="journeyNextButton">Travel onward <b>→</b></button></div>
+        <div class="narration-copy"><span id="journeyStage">LOCATION · APPROACH</span><h3 id="journeyNarrationTitle">Begin outside the electronics bench</h3><p id="journeyNarrationText">You start in the lab, outside the computer. Ahead, the motherboard carries the selected command toward its processor.</p></div>
+        <div class="journey-telemetry"><div><small>TRAVEL VELOCITY</small><b id="journeyVelocity">1.0 units/cycle</b></div><div><small>PACKET STATE</small><b id="journeyPacketState">TRAVELER</b></div></div>
+        <div class="journey-controls"><button id="journeyBack" aria-label="Previous checkpoint">← Prev</button><button id="journeyAuto">Auto tour <b>▶</b></button><button id="journeyNextButton">Continue the route <b>→</b></button></div>
       </div>
-      <div class="journey-help">← → navigate · SPACE auto tour · ESC exit</div>
+      <div class="journey-help">DRAG 3D VIEW TO LOOK AROUND · ← → NAVIGATE · SPACE AUTO TOUR · ESC EXIT</div>
     </div>
 
     <section class="anatomy" id="anatomy">
-      <div class="section-heading"><div><p class="eyebrow"><span></span> Under the hood</p><h2>Why they behave differently</h2></div></div>
+      <div class="section-heading"><div><p class="eyebrow"><span></span> Under the hood</p><h2>Why they behave differently</h2></div><p>Architecture is an engineering trade-off across instruction encoding, decoding hardware, memory access rules, pipeline scheduling, and code density—not a simple competition with a single winner.</p></div>
       <div class="anatomy-grid">
-        <article><span>01</span><h3>Instruction format</h3><div class="format-viz"><i>OP</i><i>RD</i><i>RS1</i><i>RS2</i></div><p>RISC favors fixed-width fields. Fetch and decode stay predictable, while complex work is composed from several instructions.</p></article>
-        <article><span>02</span><h3>Memory access</h3><div class="flow-viz"><i>REG</i><b>→</b><i>ALU</i><b>→</b><i>MEM</i></div><p>A load–store ISA isolates memory access. CISC instructions may combine address calculation, memory access, and arithmetic.</p></article>
-        <article><span>03</span><h3>Control strategy</h3><div class="control-viz"><i></i><i></i><i></i><i></i><i></i></div><p>Simple instructions map cleanly to hardwired control. Rich instructions may expand into internal micro-operations.</p></article>
+        <article><span>01 · ENCODING</span><h3>Instruction format</h3><div class="format-viz"><i>OP</i><i>RD</i><i>RS1</i><i>RS2</i></div><p>RISC favors fixed-width 32-bit fields where register specifiers always sit in the same bit positions. CISC uses variable-length 1–15 byte encodings (prefixes, opcode, ModR/M, SIB, displacement, immediate) to pack more work into fewer program bytes.</p></article>
+        <article><span>02 · DATAPATH</span><h3>Load–store vs memory operands</h3><div class="flow-viz"><i>REG</i><b>→</b><i>ALU</i><b>→</b><i>MEM</i></div><p>A load–store RISC ISA isolates memory access inside explicit <code>LW</code>/<code>SW</code> instructions while arithmetic stays register-to-register. CISC instructions can combine address generation, cache access, and ALU arithmetic inside one architectural command.</p></article>
+        <article><span>03 · TRANSLATION</span><h3>Hardwired decode vs microcode</h3><div class="control-viz"><i></i><i></i><i></i><i></i><i></i></div><p>Simple RISC commands map directly to pipeline control signals in a single cycle. Complex CISC commands are cracked by hardware decoders or a Microcode ROM sequencer into multiple internal RISC-like micro-operations (µops).</p></article>
+        <article><span>04 · PIPELINING</span><h3>Hazards & forwarding</h3><div class="format-viz"><i>IF</i><i>ID</i><i>EX</i><i>MEM</i><i>WB</i></div><p>Overlapping instructions creates data hazards (RAW dependencies) and control hazards (branches). Processors resolve data hazards with ALU-to-ALU forwarding paths and handle branches via prediction and speculative execution.</p></article>
+        <article><span>05 · DYNAMIC EXECUTION</span><h3>Renaming, scheduling & ROB</h3><div class="flow-viz"><i>RENAME</i><b>→</b><i>SCHED</i><b>→</b><i>ROB</i></div><p>High-performance cores map architectural registers (`EAX`, `R1`) onto a larger pool of physical registers to eliminate false dependencies, execute ready micro-ops out of order, and commit results in program order through a Reorder Buffer (ROB).</p></article>
+        <article><span>06 · CONVERGENCE</span><h3>Code density, CPI & modern CPUs</h3><div class="format-viz"><i>BYTES</i><i>×</i><i>INSTR</i><i>×</i><i>CPI</i></div><p>Total execution time equals <code>Instructions × CPI × Clock Period</code>. Fewer architectural instructions do not guarantee higher speed. Modern CISC chips use RISC-like internal micro-op engines, while modern RISC ISAs add compressed and vector extensions.</p></article>
       </div>
     </section>
 
