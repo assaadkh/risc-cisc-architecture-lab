@@ -340,8 +340,8 @@ renderCoreInstructionButtons();renderCore();
 // silicon buses WITH the moving data packets through every stage.
 // ============================================================================
 const JOURNEY_UNITS={
-  outside:['ELECTRONICS TEST BENCH','LAB','TEST BENCH','ENGINEER HANDS'],
-  bench:['CONTROLLER & LOGIC PROBE','HAND','SIGNAL INJECT','COMMAND PULSE'],
+  outside:['ELECTRONICS TEST BENCH','LAB','TEST BENCH','BETWEEN HANDS'],
+  bench:['BUS CONTROLLER IC','CTRL','SIGNAL ENTRY','COMMAND PULSE'],
   board:['MOTHERBOARD COPPER TRACES','PCB','TRACE TRANSPORT','BUS DATA STREAM'],
   package:['CPU SOCKET & PACKAGE','PKG','PACKAGE ENTRY','ELECTRICAL BUS'],
   pins:['GOLD CONTACT CORRIDOR','PINS','PIN TRANSPORT','PIN SIGNALS'],
@@ -400,30 +400,30 @@ function getStage3DCoords(step,idx,route){
   const layout=DIE_LAYOUT_3D[coreArch];
   if(step.scene==='outside'){
     return {
-      cam:[-58,185,-445],
-      look:[-32,28,-165],
-      traveler:[-55,34,-242],
-      traceFrom:[-65,22,-250],
-      traceTo:[-14,22,-165],
-      dataLabel:`EXEC TRIGGER: ${journeyProgram().asm}`
+      cam:[0,138,-415],
+      look:[0,22,-165],
+      traveler:[0,22,-214],
+      traceFrom:[0,18,-214],
+      traceTo:[0,22,-165],
+      dataLabel:`LAUNCH SIGNAL: ${journeyProgram().asm}`
     };
   }
   if(step.scene==='bench'){
     return {
-      cam:[-52,68,-248],
-      look:[-12,20,-135],
-      traveler:[-24,25,-172],
-      traceFrom:[-65,22,-245],
-      traceTo:[-14,22,-145],
+      cam:[0,56,-225],
+      look:[0,20,-125],
+      traveler:[0,24,-168],
+      traceFrom:[0,18,-214],
+      traceTo:[0,22,-145],
       dataLabel:`CONTROLLER SERIALIZER: ${journeyProgram().asm}`
     };
   }
   if(step.scene==='board'){
     return {
-      cam:[-46,42,-165],
-      look:[-4,20,-35],
-      traveler:[-22,24,-96],
-      traceFrom:[-14,22,-165],
+      cam:[-36,40,-160],
+      look:[0,20,-30],
+      traveler:[-14,24,-96],
+      traceFrom:[0,22,-165],
       traceTo:[0,22,-24],
       dataLabel:`PCB TRACE DATA: ${step.value}`
     };
@@ -483,19 +483,23 @@ function getStage3DCoords(step,idx,route){
   // Internal silicon stage: camera rides right beside the active trace with clear view of silicon macro top arrays!
   const cur=layout[step.unit]||[0,0,90,36,68,'UNIT'];
   const prevStep=route[idx-1];
-  const prev=prevStep&&layout[prevStep.unit]?layout[prevStep.unit]:[cur[0]-90,cur[1]-30,80,34,60];
+  const prev=prevStep&&layout[prevStep.unit]?layout[prevStep.unit]:[cur[0],-198,30,10,20];
   const mx=(prev[0]+cur[0])*0.5, mz=(prev[1]+cur[1])*0.5;
   const dx=cur[0]-prev[0], dz=cur[1]-prev[1];
   const dist=Math.hypot(dx,dz)||1;
   const nx=dx/dist, nz=dz/dist;
+  const startOff=prevStep&&layout[prevStep.unit]?Math.min(42,dist*0.28):8;
+  const endOff=Math.min(42,dist*0.28);
+  const tFrom=[prev[0]+nx*startOff, -114, prev[1]+nz*startOff];
+  const tTo=[cur[0]-nx*endOff, -114, cur[1]-nz*endOff];
   const travX=cur[0]-nx*28, travZ=cur[1]-nz*28;
   const sideX=-nz*42, sideZ=nx*42;
   return {
     cam:[travX-nx*118+sideX*0.75, -46, travZ-nz*118+sideZ*0.75],
     look:[cur[0], -112, cur[1]],
     traveler:[travX, -108, travZ],
-    traceFrom:[prev[0], -114, prev[1]],
-    traceTo:[cur[0], -114, cur[1]],
+    traceFrom:tFrom,
+    traceTo:tTo,
     unitBox:cur,
     prevPos:[mx, -114, mz],
     dataLabel:step.value
@@ -531,8 +535,8 @@ function journeyTone(frequency=240,duration=.16){
 function journeyRoute(){
   const program=journeyProgram(),seed=(program.steps[0]?.bits||'1011010011010010').padStart(32,'0');
   const prelude=[
-    {unit:'outside',scene:'outside',route:'Lab Bench',title:'Engineer at the electronics test bench',text:`You begin at a live hardware test bench with an oscilloscope, power supply, and instruction controller. The engineer's hands position the logic probe and press EXECUTE to launch ${program.asm}.`,value:`Trigger · ${program.asm}`,bits:seed},
-    {unit:'bench',scene:'bench',route:'Hands/Probe',title:'Hands inject the command into the controller',text:`The engineer's right hand presses the controller trigger while the left hand holds the probe on the bus header. The software command ${program.asm} becomes a live electrical bit stream entering the controller.`,value:`Probe pulse · ${program.asm}`,bits:seed},
+    {unit:'outside',scene:'outside',route:'Lab Bench',title:'Standing at the electronics test bench',text:`You stand directly between the resting hands at the hardware test bench, looking straight across the controller pad, oscilloscope, power supply, and motherboard as ${program.asm} is queued.`,value:`Queued · ${program.asm}`,bits:seed},
+    {unit:'bench',scene:'bench',route:'Controller',title:'Move between the hands into the controller IC',text:`Moving forward between the resting hands, you enter the bus controller IC as the software command ${program.asm} becomes a live electrical bit stream.`,value:`Controller · ${program.asm}`,bits:seed},
     {unit:'board',scene:'board',route:'PCB Traces',title:'Transported beside the copper motherboard traces',text:'You shrink to board scale and ride right beside the glowing copper bus traces with the binary data packets as they race across the PCB from the controller toward the CPU socket.',value:`Bus trace · ${program.asm}`,bits:seed},
     {unit:'package',scene:'package',route:'CPU Package',title:'Enter the CPU socket and processor package',text:`Still traveling beside the copper trace, you reach the CPU socket and pass beneath the metallic heatspreader (${coreArch==='cisc'?'EDU-C86':'EDU-R32'}) that protects the silicon die inside.`,value:`Package · ${coreArch==='cisc'?'EDU-C86':'EDU-R32'}`,bits:seed},
     {unit:'pins',scene:'pins',route:'Contacts',title:'Ride beside the gold processor contacts',text:'You travel alongside the electrical signal up the gold package pins and contacts that carry power, clock edges, addresses, data, and control into the processor.',value:'Contacts · ADDR / DATA / CLK',bits:seed},
@@ -609,18 +613,107 @@ function renderJourney(){
 // ============================================================================
 // REAL-TIME 60FPS 3D CANVAS SCENE RENDERER FOR #cpuJourney
 // Renders:
-// 1. Test Bench, Oscilloscope, Power Supply, Controller Pad & Engineer's 3D Hands
+// 1. Test Bench, Oscilloscope, Power Supply, Interactive 12-Switch Controller Pad & 3D Hands
 // 2. Motherboard PCB, RAM DIMMs, Controller IC, Copper Traces & Moving Data Blocks
 // 3. CPU Socket, Heatspreader Package (EDU-R32 / EDU-C86), Gold Contact Pins
 // 4. Multi-layer Package Substrate, Vertical Copper Vias & C4 Micro-bumps
 // 5. Complete 3D Silicon Die Floorplan with all RISC/CISC 3D units & trace rails
-// 6. The 3D Traveler ("YOU") riding right beside the traces with the data stream!
 // ============================================================================
+let jPadSwitchRects=[];
+let jHoveredSwitch=null;
+let jPressedSwitch=null; // {id, time, desc}
+
+function getPadSwitchDefs(){
+  const isCisc=coreArch==='cisc';
+  const row0=isCisc
+    ?[
+        {id:'cmd:mov',kx:-33,kz:-238,label:'MOV',desc:'SELECT MOV EAX, [0x1000]',active:coreInstruction==='mov'},
+        {id:'cmd:addm',kx:-11,kz:-238,label:'ADDM',desc:'SELECT ADD EAX, [0x1004]',active:coreInstruction==='addm'},
+        {id:'cmd:rep',kx:11,kz:-238,label:'REP',desc:'SELECT REP MOVSD LOOP',active:coreInstruction==='rep'},
+        {id:'cmd:push',kx:33,kz:-238,label:'PUSH',desc:'SELECT PUSH EAX STACK OP',active:coreInstruction==='push'}
+      ]
+    :[
+        {id:'cmd:add',kx:-33,kz:-238,label:'ADD',desc:'SELECT ADD R3, R1, R2',active:coreInstruction==='add'},
+        {id:'cmd:load',kx:-11,kz:-238,label:'LW',desc:'SELECT LW R4, 0(R1)',active:coreInstruction==='load'},
+        {id:'cmd:store',kx:11,kz:-238,label:'SW',desc:'SELECT SW R3, 4(R1)',active:coreInstruction==='store'},
+        {id:'cmd:branch',kx:33,kz:-238,label:'BEQ',desc:'SELECT BEQ R3, R4, +8',active:coreInstruction==='branch'}
+      ];
+  const row1=[
+    {id:'arch:risc',kx:-33,kz:-254,label:'RISC',desc:'SWITCH TO RISC (EDU-R32)',active:coreArch==='risc'},
+    {id:'arch:cisc',kx:-11,kz:-254,label:'CISC',desc:'SWITCH TO CISC (EDU-C86)',active:coreArch==='cisc'},
+    {id:'act:exec',kx:11,kz:-254,label:'EXEC ▶',desc:`LAUNCH ${journeyProgram().asm}`,primary:true},
+    {id:'act:auto',kx:33,kz:-254,label:'AUTO',desc:'TOGGLE AUTO TOUR',active:!!journeyAutoTimer}
+  ];
+  const row2=[
+    {id:'act:prev',kx:-33,kz:-270,label:'◀ PREV',desc:'STEP BACKWARD'},
+    {id:'act:next',kx:-11,kz:-270,label:'NEXT ▶',desc:'STEP FORWARD'},
+    {id:'act:reset',kx:11,kz:-270,label:'RESET',desc:'RETURN TO BENCH'},
+    {id:'act:sound',kx:33,kz:-270,label:'SOUND',desc:'TOGGLE SYNTH AUDIO',active:journeySoundOn}
+  ];
+  return [...row0,...row1,...row2];
+}
+
+function playSwitchClickTone(freq=420){
+  try{
+    if(!journeyAudio)journeyAudio=new (window.AudioContext||window.webkitAudioContext)();
+    const osc=journeyAudio.createOscillator(),gain=journeyAudio.createGain();
+    osc.type='triangle';
+    osc.frequency.setValueAtTime(freq,journeyAudio.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(freq*1.45,journeyAudio.currentTime+0.085);
+    gain.gain.setValueAtTime(0.055,journeyAudio.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,journeyAudio.currentTime+0.085);
+    osc.connect(gain).connect(journeyAudio.destination);
+    osc.start();osc.stop(journeyAudio.currentTime+0.085);
+  }catch(e){}
+}
+
+function pressPadSwitch(sw){
+  if(!sw)return;
+  jPressedSwitch={id:sw.id,time:performance.now(),desc:sw.desc};
+  playSwitchClickTone(sw.primary?520:390);
+  if(sw.id.startsWith('cmd:')){
+    const cmd=sw.id.slice(4);
+    if(CORE_PROGRAMS[coreArch]?.[cmd]){
+      coreInstruction=cmd;
+      coreStepIndex=0;coreCycle=0;
+      renderCoreInstructionButtons();
+      renderCore();
+      renderJourney();
+    }
+  }else if(sw.id==='arch:risc'||sw.id==='arch:cisc'){
+    const nextArch=sw.id.slice(5);
+    if(coreArch!==nextArch){
+      coreArch=nextArch;
+      coreInstruction=coreArch==='risc'?'add':'mov';
+      coreStepIndex=0;coreCycle=0;
+      stopCore();
+      renderCoreInstructionButtons();
+      renderCore();
+      updateJourneyTargets(true);
+      renderJourney();
+    }
+  }else if(sw.id==='act:exec'||sw.id==='act:next'){
+    setTimeout(()=>travelJourney(1),140);
+  }else if(sw.id==='act:prev'){
+    setTimeout(()=>travelJourney(-1),110);
+  }else if(sw.id==='act:auto'){
+    toggleJourneyAuto();
+  }else if(sw.id==='act:reset'){
+    restartJourney();
+  }else if(sw.id==='act:sound'){
+    $('#journeySound').click();
+  }
+}
+
 function startJourney3DLoop(){
   if(jAnimFrame)cancelAnimationFrame(jAnimFrame);
   const canvas=$('#journeyCanvas');
   if(!canvas)return;
   const ctx=canvas.getContext('2d');
+  const handCacheCanvas=document.createElement('canvas');
+  const handCacheCtx=handCacheCanvas.getContext('2d');
+  let handCacheKey='';
+  let lastPinHTML='';
 
   // Helper to shade hex or rgb colors by a directional light factor
   function shadeColor(col,factor){
@@ -634,7 +727,8 @@ function startJourney3DLoop(){
   function frame(now){
     if($('#cpuJourney').hidden)return;
     const t=now*0.001;
-    const dpr=Math.min(window.devicePixelRatio||1,2);
+    // Cap DPR at 1.5 for ultra-smooth 60fps canvas rendering without HiDPI lag
+    const dpr=Math.min(window.devicePixelRatio||1,1.5);
     const w=canvas.clientWidth||window.innerWidth;
     const h=canvas.clientHeight||window.innerHeight;
     if(canvas.width!==Math.floor(w*dpr)||canvas.height!==Math.floor(h*dpr)){
@@ -858,33 +952,87 @@ function startJourney3DLoop(){
       }
     }
 
-    // Draw a realistic multi-lane copper/silicon bus trace with metallic conductors & data capsules
+    // Draw a realistic 4-lane differential copper/silicon bus with high-speed voltage pulse streaks
     function drawTraceWithData(pStart,pEnd,isActive,isVisited,dataText,bitStr='10110010'){
       const dx=pEnd[0]-pStart[0], dy=pEnd[1]-pStart[1], dz=pEnd[2]-pStart[2];
       const len=Math.hypot(dx,dy,dz)||1;
-      const sx=-dz/len*3.6, sz=dx/len*3.6;
+      const sx=-dz/len*4.2, sz=dx/len*4.2;
 
-      // Dark dielectric trench beneath the copper bus lanes
-      drawLine3D(pStart,pEnd,'rgba(4,10,8,0.85)',isActive?11:7);
-      // 4 Parallel etched copper / cobalt conductor tracks
-      const baseTrackCol=isActive?copperBright:isVisited?copper:'rgba(180,130,60,0.42)';
-      for(const lane of [-1.2,-0.4,0.4,1.2]){
+      // Dark etched PCB dielectric channel beneath the 4 parallel copper bus lanes
+      drawLine3D(pStart,pEnd,'rgba(4,12,9,0.88)',isActive?13:7.5);
+      // Outer gold ground-shield guard rails
+      for(const guard of [-1.65,1.65]){
         drawLine3D(
-          [pStart[0]+sx*lane,pStart[1]+0.2,pStart[2]+sz*lane],
-          [pEnd[0]+sx*lane,pEnd[1]+0.2,pEnd[2]+sz*lane],
-          lane===0.4&&isActive?accentBright:baseTrackCol,
-          isActive?2.1:1.2
+          [pStart[0]+sx*guard,pStart[1]+0.15,pStart[2]+sz*guard],
+          [pEnd[0]+sx*guard,pEnd[1]+0.15,pEnd[2]+sz*guard],
+          isActive?'rgba(234,179,8,0.55)':'rgba(180,130,60,0.25)',
+          0.9
         );
       }
-      if(isActive){
-        drawLine3D(pStart,pEnd,accent,3.2);
+
+      // 4 Parallel etched copper / cobalt differential conductor lanes
+      const lanes=[-1.15,-0.38,0.38,1.15];
+      const baseTrackCol=isActive?'rgba(245,158,11,0.55)':isVisited?copper:'rgba(180,130,60,0.35)';
+      for(let lIdx=0;lIdx<4;lIdx++){
+        const lane=lanes[lIdx];
+        const lStart=[pStart[0]+sx*lane,pStart[1]+0.25,pStart[2]+sz*lane];
+        const lEnd=[pEnd[0]+sx*lane,pEnd[1]+0.25,pEnd[2]+sz*lane];
+        drawLine3D(lStart,lEnd,baseTrackCol,isActive?1.5:1.1);
+
+        // High-speed voltage pulse streaks (comet tail + bright wavefront) along each lane!
+        if(isActive||isVisited){
+          const pulsesPerLane=isActive?2:1;
+          for(let p=0;p<pulsesPerLane;p++){
+            const phaseOffset=lIdx*0.23+p*0.5;
+            const uHead=((t*(isActive?0.72:0.25)+phaseOffset)%1);
+            const tailLen=isActive?Math.min(0.24,14/len):Math.min(0.14,8/len);
+            const uTail=Math.max(0,uHead-tailLen);
+            const uMid=Math.max(0,uHead-tailLen*0.42);
+
+            const ptTail=[lStart[0]+dx*uTail,lStart[1]+dy*uTail+0.5,lStart[2]+dz*uTail];
+            const ptMid=[lStart[0]+dx*uMid,lStart[1]+dy*uMid+0.6,lStart[2]+dz*uMid];
+            const ptHead=[lStart[0]+dx*uHead,lStart[1]+dy*uHead+0.7,lStart[2]+dz*uHead];
+
+            // Outer comet tail -> bright core -> hot white leading edge (zero shadowBlur lag!)
+            drawLine3D(ptTail,ptMid,isActive?accent:copper,isActive?2.2:1.4);
+            drawLine3D(ptMid,ptHead,isActive?accentBright:copperBright,isActive?3.4:1.8);
+
+            if(isActive){
+              const pr=project(ptHead[0],ptHead[1]+0.4,ptHead[2]);
+              if(pr&&pr.z<620){
+                const bitIdx=(lIdx*2+p)%bitStr.length;
+                const bitChar=bitStr[bitIdx]||'1';
+                const isOne=bitChar==='1';
+                const dotR=Math.max(2.0,Math.min(4.8,360/pr.z));
+                ctx.beginPath();
+                ctx.fillStyle=isOne?'#ffffff':accentBright;
+                ctx.arc(pr.x,pr.y,dotR,0,Math.PI*2);
+                ctx.fill();
+
+                // Crisp micro-bit tag floating above the outer lanes (staggered so they never collide)
+                if(p===0&&(lIdx===0||lIdx===3)&&pr.z<460){
+                  ctx.fillStyle='rgba(4,12,9,0.88)';
+                  ctx.strokeStyle=isOne?accentBright:'#eab308';
+                  ctx.lineWidth=1;
+                  ctx.fillRect(pr.x-7,pr.y-dotR-13,14,11);
+                  ctx.strokeRect(pr.x-7,pr.y-dotR-13,14,11);
+                  ctx.fillStyle=isOne?'#ffffff':'#fef08a';
+                  ctx.font='900 8px ui-monospace,monospace';
+                  ctx.textAlign='center';
+                  ctx.textBaseline='middle';
+                  ctx.fillText(bitChar,pr.x,pr.y-dotR-7.2);
+                }
+              }
+            }
+          }
+        }
       }
 
-      // Plated through-hole (PTH) / via termination pads at both ends of trace
+      // Plated through-hole (PTH) / gold via termination pads at both ends of bus
       for(const pt of [pStart,pEnd]){
         const pr=project(pt[0],pt[1]+0.4,pt[2]);
         if(pr&&pr.z<700){
-          const padR=Math.max(2.5,Math.min(8,420/pr.z));
+          const padR=Math.max(2.5,Math.min(6.5,380/pr.z));
           ctx.beginPath();
           ctx.fillStyle=isActive?accentBright:gold;
           ctx.strokeStyle='#451a03';
@@ -893,35 +1041,6 @@ function startJourney3DLoop(){
           ctx.fill();
           ctx.stroke();
         }
-      }
-
-      // Moving 3D Silicon Data Capsules convecting along the trace
-      const count=isActive?5:isVisited?2:0;
-      for(let i=0;i<count;i++){
-        const u=((t*(isActive?0.46:0.20)+i/count)%1);
-        const px=pStart[0]+dx*u, py=pStart[1]+dy*u+2.0, pz=pStart[2]+dz*u;
-        if(isActive){
-          drawBox3D(px,py-1.2,pz,7.2,3.6,7.2,accentBright,accent,'#ffffff',0.9);
-        }
-        const pr=project(px,py+2.2,pz);
-        if(!pr)continue;
-        const r=Math.max(2.5,Math.min(11,780/pr.z));
-        ctx.save();
-        ctx.beginPath();
-        ctx.fillStyle=isActive?'#ffffff':copperBright;
-        ctx.shadowColor=isActive?accent:copper;
-        ctx.shadowBlur=isActive?14:5;
-        ctx.arc(pr.x,pr.y,r,0,Math.PI*2);
-        ctx.fill();
-        if(isActive&&pr.z<540){
-          const bitChar=bitStr[i%bitStr.length]||'1';
-          ctx.fillStyle='#020804';
-          ctx.font=`900 ${Math.max(7,Math.round(r*0.95))}px ui-monospace,monospace`;
-          ctx.textAlign='center';
-          ctx.textBaseline='middle';
-          ctx.fillText(bitChar,pr.x,pr.y);
-        }
-        ctx.restore();
       }
     }
 
@@ -989,25 +1108,83 @@ function startJourney3DLoop(){
       spatialPins.push({pos:[215,84,-45],tag:'VCORE REGULATOR',label:'BENCH DC SUPPLY · 1.20V / 4.85A'});
 
       // ----------------------------------------------------------------------
-      // HARDWARE INSTRUCTION LAUNCH CONTROLLER PAD at (-75, 0, -250)
+      // INTERACTIVE 12-SWITCH HARDWARE INSTRUCTION CONTROLLER PAD at (0, 0, -252)
+      // Click any switch on the 3D pad to select instructions, toggle RISC/CISC,
+      // launch the signal (EXEC), step forward/back, or toggle auto-tour!
       // ----------------------------------------------------------------------
-      drawBox3D(-75,0,-250,102,16,72,'#1e293b','#0f172a','#475569',1.3,0.5);
-      // Controller OLED status display strip
-      drawPoly3D([[-118,16.5,-232],[-32,16.5,-232],[-32,16.5,-218],[-118,16.5,-218]],'#041a12',accent,1.1);
-      // Tactile Mechanical Keycaps on Controller Pad
-      const pressDip=Math.sin(t*5)*2.2;
-      for(let kx=-105;kx<=-45;kx+=20){
-        for(let kz=-272;kz<=-238;kz+=17){
-          const isExec=(kx===-65&&kz===-255);
-          const kh=isExec?Math.max(2,4.5+pressDip):5.5;
-          drawBox3D(kx,16,kz,14.5,kh,12.5,isExec?accent:'#334155',isExec?shadeColor(accent,0.7):'#1e293b',isExec?'#ffffff':'#64748b',1);
+      drawBox3D(0,0,-252,102,15,72,'#1e293b','#0f172a','#475569',1.3,0.5);
+      // Angled 3D OLED Status Display Bezel at back of Controller Pad
+      drawBox3D(0,15,-222,90,6,12,'#041a12','#020d09',accent,1.2);
+      const oledProj=project(0,19.8,-222);
+      if(oledProj&&oledProj.z<520){
+        ctx.save();
+        ctx.textAlign='center';
+        ctx.textBaseline='middle';
+        ctx.font='900 9.5px ui-monospace,monospace';
+        const activeSw=(jPressedSwitch&&now-jPressedSwitch.time<550)?jPressedSwitch:jHoveredSwitch;
+        const oledText=activeSw?`▶ ${activeSw.desc}`:`PAD READY · ${journeyProgram().asm} (CLICK ANY SWITCH)`;
+        const otw=ctx.measureText(oledText).width+16;
+        ctx.fillStyle='rgba(2,13,9,0.92)';
+        ctx.strokeStyle=accent;
+        ctx.lineWidth=1.1;
+        ctx.fillRect(oledProj.x-otw*0.5,oledProj.y-8,otw,16);
+        ctx.strokeRect(oledProj.x-otw*0.5,oledProj.y-8,otw,16);
+        ctx.fillStyle=accentBright;
+        ctx.fillText(oledText,oledProj.x,oledProj.y);
+        ctx.restore();
+      }
+
+      // Render all 12 Interactive Tactile Mechanical Switches & record 2D hit boxes
+      const nextSwitchRects=[];
+      const swDefs=getPadSwitchDefs();
+      for(const sw of swDefs){
+        const isHov=jHoveredSwitch&&jHoveredSwitch.id===sw.id;
+        const isPress=jPressedSwitch&&jPressedSwitch.id===sw.id&&(now-jPressedSwitch.time<260);
+        const keyY=isPress?12.2:(isHov?15.8:15.0);
+        const keyH=isPress?3.2:5.4;
+        const topFill=isPress
+          ?'#ffffff'
+          :sw.primary
+          ?accent
+          :sw.active
+          ?(isCisc?'#2563eb':'#16a34a')
+          :isHov
+          ?'#475569'
+          :'#334155';
+        const sideFill=sw.primary?shadeColor(accent,0.68):sw.active?'#0f172a':'#1e293b';
+        const edgeCol=(isPress||isHov||sw.primary||sw.active)?'#ffffff':'#64748b';
+
+        // Draw switch housing well + 3D tactile keycap
+        drawBox3D(sw.kx,keyY,sw.kz,16.5,keyH,12.5,topFill,sideFill,edgeCol,(isHov||sw.primary||sw.active)?1.5:1.0);
+
+        // Compute 2D projected top face for keycap legend & pointer click hit-testing
+        const c0=project(sw.kx-8.5,keyY+keyH,sw.kz-6.5);
+        const c1=project(sw.kx+8.5,keyY+keyH,sw.kz-6.5);
+        const c2=project(sw.kx+8.5,keyY+keyH,sw.kz+6.5);
+        const c3=project(sw.kx-8.5,keyY+keyH,sw.kz+6.5);
+        const centerTop=project(sw.kx,keyY+keyH+0.4,sw.kz);
+        if(c0&&c1&&c2&&c3&&centerTop){
+          const minX=Math.min(c0.x,c1.x,c2.x,c3.x)-3;
+          const maxX=Math.max(c0.x,c1.x,c2.x,c3.x)+3;
+          const minY=Math.min(c0.y,c1.y,c2.y,c3.y)-3;
+          const maxY=Math.max(c0.y,c1.y,c2.y,c3.y)+4;
+          nextSwitchRects.push({...sw,minX,maxX,minY,maxY});
+
+          ctx.save();
+          ctx.textAlign='center';
+          ctx.textBaseline='middle';
+          ctx.font='900 8.5px ui-monospace,monospace';
+          ctx.fillStyle=isPress?'#0f172a':(sw.primary?'#051b11':'#f8fafc');
+          ctx.fillText(sw.label,centerTop.x,centerTop.y);
+          ctx.restore();
         }
       }
-      spatialPins.push({pos:[-75,28,-250],tag:'HARDWARE TRIGGER',label:`CONTROLLER PAD (${journeyProgram().asm})`,hi:step.scene==='outside'});
+      jPadSwitchRects=nextSwitchRects;
+      spatialPins.push({pos:[0,38,-204],tag:'INTERACTIVE HARDWARE CONTROLLER',label:`CLICK 3D SWITCHES · ${journeyProgram().asm}`,hi:step.scene==='outside'});
 
       // ======================================================================
       // REALISTIC MOTHERBOARD PCB, VRM CAPACITORS, RAM & CONTROLLER IC CUTAWAY
-      // (Drawn BEFORE the Engineer's Hands & Probe so hands rest naturally on top!)
+      // (Drawn BEFORE the resting hands so hands sit naturally in foreground!)
       // ======================================================================
       drawBox3D(0,2,0,348,14,288,'#0a2e1c','#061c11','#1e5e3a',1.5,0.3);
       // Gold-plated motherboard corner mounting holes / standoffs
@@ -1031,28 +1208,28 @@ function startJourney3DLoop(){
       }
       spatialPins.push({pos:[-116,55,-20],tag:'SYSTEM MEMORY',label:'DDR4 DIMM BANKS (4 CHANNELS)'});
 
-      // Bus Controller QFP IC (-14, 16, -165) with gull-wing metallic leads & X-Ray silicon cutaway
+      // Bus Controller QFP IC centered at (0, 16, -165) with gull-wing metallic leads & X-Ray silicon cutaway
       const ctrlOpen=step.scene==='bench'||step.scene==='board';
       for(let pz=-178;pz<=-152;pz+=5.2){
-        drawLine3D([-42,16.5,pz],[-35,19,pz],'#cbd5e1',2.0);
-        drawLine3D([7,19,pz],[14,16.5,pz],'#cbd5e1',2.0);
+        drawLine3D([-28,16.5,pz],[-21,19,pz],'#cbd5e1',2.0);
+        drawLine3D([21,19,pz],[28,16.5,pz],'#cbd5e1',2.0);
       }
-      drawBox3D(-14,16,-165,48,11,38,ctrlOpen?'rgba(15,23,42,0.35)':'#1e293b','#0f172a',accent,ctrlOpen?2.0:1.2,16.1);
-      drawBox3D(-25,17,-168,15,7.5,14,accent,'#0f172a','#ffffff',1.1);
-      drawBox3D(-3,17,-160,17,7.5,15,'#f59e0b','#78350f','#fef08a',1.1);
-      spatialPins.push({pos:[-14,33,-165],tag:'INSIDE CONTROLLER IC',label:`SERIALIZING ${journeyProgram().asm}`,hi:step.scene==='bench'});
+      drawBox3D(0,16,-165,48,11,38,ctrlOpen?'rgba(15,23,42,0.35)':'#1e293b','#0f172a',accent,ctrlOpen?2.0:1.2,16.1);
+      drawBox3D(-11,17,-168,15,7.5,14,accent,'#0f172a','#ffffff',1.1);
+      drawBox3D(11,17,-160,17,7.5,15,'#f59e0b','#78350f','#fef08a',1.1);
+      spatialPins.push({pos:[0,33,-165],tag:'INSIDE CONTROLLER IC',label:`SERIALIZING ${journeyProgram().asm}`,hi:step.scene==='bench'});
 
-      // Etched Copper Bus Traces leading from Controller Pad -> Controller IC -> CPU Socket
+      // Etched Copper Bus Traces leading straight from Controller Pad rear connector -> Controller IC -> CPU Socket
       drawTraceWithData(
-        [-65,22,-240],
-        [-14,22,-165],
+        [0,18,-214],
+        [0,22,-165],
         step.scene==='outside'||step.scene==='bench',
         journeyIndex>1,
         journeyProgram().asm,
         step.bits
       );
       drawTraceWithData(
-        [-14,22,-165],
+        [0,22,-165],
         [0,22,-28],
         step.scene==='board'||step.scene==='package',
         journeyIndex>2,
@@ -1060,7 +1237,7 @@ function startJourney3DLoop(){
         step.bits
       );
       if(step.scene==='board'){
-        spatialPins.push({pos:[-8,28,-95],tag:'MOTHERBOARD BUS',label:`COPPER TRACE · ${journeyProgram().asm}`,hi:true});
+        spatialPins.push({pos:[0,28,-95],tag:'MOTHERBOARD BUS',label:`COPPER TRACE · ${journeyProgram().asm}`,hi:true});
       }
 
       // ======================================================================
@@ -1114,71 +1291,125 @@ function startJourney3DLoop(){
       });
 
       // ----------------------------------------------------------------------
-      // SMOOTH, ORGANIC, ANATOMICALLY SCULPTED 3D ENGINEER HANDS & LOGIC PROBE
-      // (Rendered AFTER the Motherboard & Keypad for true foreground occlusion!)
+      // UNIFIED 3D WEBXR HAND + WRIST + ESD CUFF + FOREARM SLEEVE MESH
+      // Extruded directly from the 20 wrist perimeter vertices so the hand,
+      // wrist, blue ESD cuff, and dark lab-coat sleeve form ONE seamless 3D
+      // mesh, cached to an offscreen canvas for zero-lag 60fps rendering!
       // ----------------------------------------------------------------------
-      if(step.scene==='outside'||step.scene==='bench'||step.scene==='board'){
-        // 1. LEFT ARM, HAND & HIGH-FREQUENCY OSCILLOSCOPE LOGIC PROBE
-        // Coaxial cable curving smoothly from Oscilloscope CH1 BNC (-255,11,-83) to Probe tail (-130,45,-184)
-        drawSmoothCapsule3D([-255,11,-83],[-205,48,-135],1.8,1.8,'#334155','#64748b');
-        drawSmoothCapsule3D([-205,48,-135],[-130,45,-184],1.8,1.9,'#334155','#64748b');
-
-        // Left Forearm Sleeve entering from far-left offscreen (-290,94,-335) -> Cuff (-152,50,-212)
-        drawSmoothCapsule3D([-290,94,-335],[-152,50,-212],18,13.5,'#1e293b','#475569','rgba(15,23,42,0.7)');
-        // Left Blue ESD Wristband & Wrist
-        drawSmoothCapsule3D([-152,50,-212],[-143,45,-200],13.2,11.5,'#0284c7','#38bdf8');
-        drawSmoothCapsule3D([-143,45,-200],[-126,39,-184],11.2,12.8,'#d99b72','#f3c6a4');
-
-        // Machined Aluminum & Knurled Rubber Oscilloscope Logic Probe held in Left Hand
-        drawSmoothCapsule3D([-130,45,-184],[-70,33,-173],4.4,3.5,'#1e293b','#64748b','#0f172a'); // Ergonomic rubber probe grip
-        drawSmoothCapsule3D([-70,33,-173],[-58,31,-171],3.8,3.6,accent,'#ffffff'); // Illuminated probe trigger collar
-        drawSmoothCapsule3D([-58,31,-171],[-26,24.5,-166.5],2.8,1.4,'#cbd5e1','#ffffff'); // Tapered stainless steel barrel
-        drawLine3D([-26,24.5,-166.5],[-14,22,-165],'#fde047',3.0); // Gold spring-loaded pogo needle tip
-
-        // Left Hand Articulated Fingers wrapping naturally around the Logic Probe barrel
-        const lFingers=[
-          [[-126,36,-184],[-108,33,-176],[-92,33,-174],3.8], // Left Thumb supporting probe underside
-          [[-120,43,-181],[-102,41,-175],[-84,36,-173],3.6], // Left Index finger along top of probe collar
-          [[-122,40,-178],[-105,37,-172],[-90,33,-171],3.5], // Left Middle finger wrapped around grip
-          [[-125,36,-176],[-110,33,-170],[-98,30,-170],3.3]  // Left Ring finger
-        ];
-        for(const lf of lFingers){
-          drawSmoothCapsule3D(lf[0],lf[1],lf[3],lf[3]*0.86,'#d99b72','#f3c6a4','rgba(110,62,38,0.4)');
-          drawSmoothCapsule3D(lf[1],lf[2],lf[3]*0.86,lf[3]*0.72,'#e0a67e','#f7d2b5','rgba(110,62,38,0.4)');
-          drawFingernail3D(lf[2],lf[1],lf[3]*0.72,false);
+      if((step.scene==='outside'||step.scene==='bench')&&window.WEBXR_HAND_MESH){
+        // Soft contact shadows under both resting hands/forearms on the ESD mat
+        for(const s of [-1, 1]){
+          drawPoly3D(
+            [[s*78,0.6,-305],[s*132,0.6,-305],[s*116,0.6,-210],[s*72,0.6,-210]],
+            'rgba(0,0,0,0.36)',null,0
+          );
         }
-        spatialPins.push({pos:[-68,46,-172],tag:'SIGNAL INJECTION',label:'HIGH-FREQ LOGIC PROBE → CONTROLLER',hi:step.scene==='outside'||step.scene==='bench'});
 
-        // 2. RIGHT ARM & SCULPTED ANATOMICAL HAND PRESSING "EXECUTE" ON CONTROLLER PAD
-        // Tailored Lab Coat Forearm entering smoothly from lower-left foreground (-125,96,-445) -> Wrist (-85,52,-314)
-        drawSmoothCapsule3D([-125,96,-445],[-85,52,-314],19,13.8,'#1e293b','#475569','rgba(15,23,42,0.7)');
-        // White Dress Shirt Cuff + Blue Anti-Static ESD Wristband with metallic snap
-        drawSmoothCapsule3D([-85,52,-314],[-82,48,-302],13.2,12.2,'#0284c7','#7dd3fc');
-        // Anatomical Wrist & Sculpted Metacarpal Palm Arch (composed of smooth overlapping 3D skin capsules)
-        drawSmoothCapsule3D([-82,48,-302],[-76,41,-280],11.8,14.2,'#d99b72','#f3c6a4');
-        drawSmoothCapsule3D([-87,39,-282],[-67,40,-276],11.5,11.0,'#d99b72','#f3c6a4');
-        drawSmoothCapsule3D([-89,37,-273],[-66,38,-269],9.5,9.2,'#e0a67e','#f5ccb0');
+        const cKey=[
+          Math.round(w),Math.round(h),dpr,
+          jCamPos[0].toFixed(1),jCamPos[1].toFixed(1),jCamPos[2].toFixed(1),
+          jCamLook[0].toFixed(1),jCamLook[1].toFixed(1),jCamLook[2].toFixed(1),
+          jUserYaw.toFixed(3),jUserPitch.toFixed(3)
+        ].join('|');
 
-        // 5 Multi-Jointed Right-Hand Fingers (MCP Knuckle -> PIP Joint -> DIP Joint -> Fingertip + Glossy Fingernail)
-        const rHandFingers=[
-          // Thumb (opposable, angled inward to stabilize hand on controller bezel)
-          {mcp:[-92,36,-280], pip:[-101,32,-268], dip:[-100,28,-258], tip:[-96,25,-250], r:4.4, hi:false},
-          // Index Finger (actively pressing the glowing EXECUTE trigger key at [-65, 20, -255]!)
-          {mcp:[-66,39,-270], pip:[-65,34+pressDip*0.4,-260], dip:[-65,27+pressDip*0.7,-255], tip:[-65,20.5+pressDip,-253], r:4.0, hi:true},
-          // Middle Finger (poised in a natural relaxed arch over adjacent keycap)
-          {mcp:[-73.5,40,-270], pip:[-73.5,35,-257], dip:[-73.5,29,-249], tip:[-73.5,24,-244], r:4.1, hi:false},
-          // Ring Finger
-          {mcp:[-81,39,-271], pip:[-81.5,34,-259], dip:[-81.5,28.5,-251], tip:[-81.5,24,-247], r:3.8, hi:false},
-          // Little Finger (Pinky)
-          {mcp:[-88,37,-273], pip:[-89,32,-262], dip:[-89.5,27,-255], tip:[-89.5,23,-251], r:3.4, hi:false}
-        ];
-        for(const fg of rHandFingers){
-          drawSmoothCapsule3D(fg.mcp,fg.pip,fg.r,fg.r*0.88,'#d99b72','#f3c6a4','rgba(105,58,34,0.38)');
-          drawSmoothCapsule3D(fg.pip,fg.dip,fg.r*0.88,fg.r*0.78,'#e0a67e','#f7d2b5','rgba(105,58,34,0.38)');
-          drawSmoothCapsule3D(fg.dip,fg.tip,fg.r*0.78,fg.r*0.68,fg.hi?'#eab896':'#e6b08a',fg.hi?'#ffffff':'#fae0cb','rgba(105,58,34,0.42)');
-          drawFingernail3D(fg.tip,fg.dip,fg.r*0.72,fg.hi);
+        if(handCacheKey!==cKey){
+          handCacheKey=cKey;
+          handCacheCanvas.width=Math.floor(w*dpr);
+          handCacheCanvas.height=Math.floor(h*dpr);
+          handCacheCtx.setTransform(dpr,0,0,dpr,0,0);
+          handCacheCtx.clearRect(0,0,w,h);
+          handCacheCtx.lineJoin='round';
+
+          const hm=window.WEBXR_HAND_MESH;
+          const vArr=hm.v, nArr=hm.n, fArr=hm.f, mArr=hm.m;
+          const vCount=vArr.length/3, fCount=fArr.length/3;
+          const scale=355;
+          const lxKey=0.0, lyKey=0.82, lzKey=-0.57;
+
+          for(const s of [-1, 1]){
+            const yaw=-s*0.24;
+            const cy=Math.cos(yaw), sy=Math.sin(yaw);
+            const wx0=s*110, wy0=15.5, wz0=-278;
+            const projV=new Array(vCount);
+            const worldN=new Array(vCount);
+
+            for(let i=0;i<vCount;i++){
+              const i3=i*3;
+              const gx=vArr[i3], gy=vArr[i3+1], gz=vArr[i3+2];
+              const ux=s*(gz-0.008)*scale;
+              const uy=-(gx+0.035)*scale;
+              const uz=-(gy-0.056)*scale;
+
+              const wx=wx0+(ux*cy-uz*sy);
+              const wy=wy0+uy+uz*0.04;
+              const wz=wz0+(ux*sy+uz*cy);
+              projV[i]=project(wx,wy,wz);
+
+              const ngx=nArr[i3], ngy=nArr[i3+1], ngz=nArr[i3+2];
+              const nux=s*ngz, nuy=-ngx, nuz=-ngy;
+              worldN[i]=[nux*cy-nuz*sy, nuy, nux*sy+nuz*cy];
+            }
+
+            const tris=[];
+            for(let f=0;f<fCount;f++){
+              const f3=f*3;
+              const ia=fArr[f3], ib=fArr[f3+1], ic=fArr[f3+2];
+              const pa=projV[ia], pb=projV[ib], pc=projV[ic];
+              if(!pa||!pb||!pc)continue;
+              const na=worldN[ia], nb=worldN[ib], nc=worldN[ic];
+              const nx=(na[0]+nb[0]+nc[0])*0.3333;
+              const ny=(na[1]+nb[1]+nc[1])*0.3333;
+              const nz=(na[2]+nb[2]+nc[2])*0.3333;
+              if(ny<-0.45&&nz>0.2)continue;
+              const zAvg=(pa.z+pb.z+pc.z)*0.3333;
+              const mat=mArr?mArr[f]:0;
+              tris.push({pa,pb,pc,nx,ny,nz,z:zAvg,mat});
+            }
+            tris.sort((a,b)=>b.z-a.z);
+
+            for(const tr of tris){
+              const ndotl=Math.max(0,tr.nx*lxKey+tr.ny*lyKey+tr.nz*lzKey);
+              const rim=Math.max(0,1-Math.abs(tr.ny))*0.16;
+              let r,g,b;
+              if(tr.mat===1){
+                // Material 1: Contoured Blue Anti-Static ESD Wristband Cuff
+                const lit=0.45+ndotl*0.52+rim;
+                const spec=Math.pow(ndotl,10)*0.28;
+                r=Math.min(255,Math.round(14*lit+spec*220));
+                g=Math.min(255,Math.round(155*lit+spec*245));
+                b=Math.min(255,Math.round(235*lit+spec*255));
+              }else if(tr.mat===2){
+                // Material 2: Tailored Dark Slate Lab-Coat Forearm Sleeve
+                const lit=0.42+ndotl*0.48+rim*0.8;
+                r=Math.min(255,Math.round(42*lit));
+                g=Math.min(255,Math.round(58*lit));
+                b=Math.min(255,Math.round(82*lit));
+              }else{
+                // Material 0: Smooth Studio-Lit Anatomical Skin (warm subsurface tone)
+                const lit=0.52+ndotl*0.42+rim*0.65;
+                const spec=Math.pow(ndotl,14)*0.14;
+                r=Math.min(255,Math.round(224*lit+spec*255));
+                g=Math.min(255,Math.round(164*lit+spec*240));
+                b=Math.min(255,Math.round(128*lit+spec*225));
+              }
+              const col=`rgb(${r},${g},${b})`;
+              handCacheCtx.fillStyle=col;
+              handCacheCtx.strokeStyle=col;
+              handCacheCtx.lineWidth=0.65;
+              handCacheCtx.beginPath();
+              handCacheCtx.moveTo(tr.pa.x,tr.pa.y);
+              handCacheCtx.lineTo(tr.pb.x,tr.pb.y);
+              handCacheCtx.lineTo(tr.pc.x,tr.pc.y);
+              handCacheCtx.closePath();
+              handCacheCtx.fill();
+              handCacheCtx.stroke();
+            }
+          }
         }
-        spatialPins.push({pos:[-76,62,-288],tag:'HUMAN OPERATOR',label:'ENGINEER HAND · PRESSING EXECUTE',hi:step.scene==='outside'});
+        // Blit cached 3D hands + wrists + cuffs + forearms in 1 single drawImage call (<0.03ms!)
+        ctx.drawImage(handCacheCanvas,0,0,w,h);
+      }else{
+        jPadSwitchRects=[];
       }
     }
 
@@ -1249,41 +1480,6 @@ function startJourney3DLoop(){
         drawLine3D([-315,-119.4,gz],[315,-119.4,gz],gz%60===0?'rgba(234,179,8,0.16)':'rgba(56,189,248,0.08)',gz%60===0?1.1:0.7);
       }
 
-      // Draw all internal on-die metal bus traces between sequential steps of the selected instruction
-      const progSteps=journeyProgram().steps;
-      for(let sIdx=0;sIdx<progSteps.length;sIdx++){
-        const curS=progSteps[sIdx];
-        const curU=layout[curS.unit];
-        if(!curU)continue;
-        const prevU=sIdx===0?[0,-175]:layout[progSteps[sIdx-1].unit];
-        if(!prevU)continue;
-        const routeIdx=sIdx+7;
-        const isCurrentTrace=(journeyIndex===routeIdx);
-        const isDoneTrace=(journeyIndex>routeIdx);
-        drawTraceWithData(
-          [prevU[0],-114,prevU[1]],
-          [curU[0],-114,curU[1]],
-          isCurrentTrace,
-          isDoneTrace,
-          curS.value,
-          curS.bits
-        );
-      }
-
-      // System Bus Exit Conduit rising from the last unit
-      const lastUnitKey=progSteps[progSteps.length-1]?.unit;
-      const lastU=layout[lastUnitKey];
-      if(lastU){
-        drawTraceWithData(
-          [lastU[0],-108,lastU[1]],
-          [0,-38,-90],
-          step.scene==='exit',
-          false,
-          `RESULT: ${progSteps[progSteps.length-1].value}`,
-          step.bits
-        );
-      }
-
       // Draw every 3D Photolithography Silicon Functional Macro Block on the Die Floorplan
       Object.entries(layout).forEach(([key,u])=>{
         const [ux,uz,uw,uh,ud,ulabel]=u;
@@ -1315,7 +1511,6 @@ function startJourney3DLoop(){
         const topY=-119+boxH+0.4;
         const isMemBlock=(key==='icache'||key==='dcache'||key==='ucode'||key==='lsu'||key==='regs'||key==='rename'||key==='queue'||key==='retire');
         if(isMemBlock){
-          // Render 2x3 3D SRAM Bitcell Sub-Banks with sense-amplifier stripes (looks like a real cache/register die shot!)
           const cols=3, rows=2;
           const cellW=(uw*0.76)/cols, cellD=(ud*0.72)/rows;
           for(let r=0;r<rows;r++){
@@ -1331,7 +1526,6 @@ function startJourney3DLoop(){
             }
           }
         }else{
-          // Render high-density ALU / Decoder standard-cell datapath rows & copper routing tracks
           for(let r=-2;r<=2;r++){
             const rz=uz+r*(ud*0.16);
             drawBox3D(
@@ -1350,42 +1544,81 @@ function startJourney3DLoop(){
           hi:isCurrent
         });
       });
+
+      // Draw all internal on-die 4-lane metal bus traces between perimeter edges of sequential macro blocks!
+      const progSteps=journeyProgram().steps;
+      for(let sIdx=0;sIdx<progSteps.length;sIdx++){
+        const curS=progSteps[sIdx];
+        const curU=layout[curS.unit];
+        if(!curU)continue;
+        const prevU=sIdx===0?[curU[0],-198]:layout[progSteps[sIdx-1].unit];
+        if(!prevU)continue;
+        const dx=curU[0]-prevU[0], dz=curU[1]-prevU[1];
+        const dist=Math.hypot(dx,dz)||1;
+        const nx=dx/dist, nz=dz/dist;
+        const sOff=sIdx===0?8:Math.min(42,dist*0.28);
+        const eOff=Math.min(42,dist*0.28);
+        const routeIdx=sIdx+7;
+        const isCurrentTrace=(journeyIndex===routeIdx);
+        const isDoneTrace=(journeyIndex>routeIdx);
+        drawTraceWithData(
+          [prevU[0]+nx*sOff,-115,prevU[1]+nz*sOff],
+          [curU[0]-nx*eOff,-115,curU[1]-nz*eOff],
+          isCurrentTrace,
+          isDoneTrace,
+          curS.value,
+          curS.bits
+        );
+      }
+
+      // System Bus Exit Conduit rising from the last unit
+      const lastUnitKey=progSteps[progSteps.length-1]?.unit;
+      const lastU=layout[lastUnitKey];
+      if(lastU){
+        drawTraceWithData(
+          [lastU[0],-108,lastU[1]-32],
+          [0,-38,-90],
+          step.scene==='exit',
+          false,
+          `RESULT: ${progSteps[progSteps.length-1].value}`,
+          step.bits
+        );
+      }
     }
 
     // ========================================================================
-    // 4. ACTIVE TRACE HIGHLIGHT & REALISTIC SILICON DATA FRAME (NO "YOU" SPHERE!)
+    // 4. SYNCHRONIZED BUS PACKET TRANSPONDER & CALLOUT (NO DUPLICATE OVERDRAW)
     // ========================================================================
     const curCoords=getStage3DCoords(step,journeyIndex,route);
     if(curCoords.traceFrom&&curCoords.traceTo){
-      drawTraceWithData(curCoords.traceFrom,curCoords.traceTo,true,true,curCoords.dataLabel,step.bits);
-      // Draw the primary 3D Silicon Data Packet Frame gliding along the trace right beside the camera
       const tf=curCoords.traceFrom, tt=curCoords.traceTo;
-      const uSync=0.56+Math.sin(t*3.0)*0.14;
+      const uSync=0.52+Math.sin(t*2.6)*0.16;
       const dpx=tf[0]+(tt[0]-tf[0])*uSync;
-      const dpy=tf[1]+(tt[1]-tf[1])*uSync+2.2;
+      const dpy=tf[1]+(tt[1]-tf[1])*uSync+1.6;
       const dpz=tf[2]+(tt[2]-tf[2])*uSync;
-      drawBox3D(dpx,dpy-1.5,dpz,10,4.5,10,'#ffffff',accent,'#fde047',1.4);
+      // Sleek 4-lane synchronized bus packet latch bar gliding across the trace
+      drawBox3D(dpx,dpy-0.8,dpz,11,2.2,4.5,accentBright,accent,'#ffffff',1.1);
       const dpProj=project(dpx,dpy+6.5,dpz);
       if(dpProj&&dpProj.z<520){
         ctx.save();
         ctx.font='900 10px ui-monospace,monospace';
-        const syncTxt=`SIGNAL ON TRACE · ${step.value}`;
-        const stw=ctx.measureText(syncTxt).width+16;
-        ctx.fillStyle='rgba(6,14,10,0.92)';
-        ctx.strokeStyle='#eab308';
+        const syncTxt=`BUS PACKET · ${step.value}`;
+        const stw=ctx.measureText(syncTxt).width+18;
+        ctx.fillStyle='rgba(4,12,9,0.92)';
+        ctx.strokeStyle=accentBright;
         ctx.lineWidth=1.3;
-        ctx.fillRect(dpProj.x-stw*0.5,dpProj.y-22,stw,17);
-        ctx.strokeRect(dpProj.x-stw*0.5,dpProj.y-22,stw,17);
-        ctx.fillStyle='#fef08a';
+        ctx.fillRect(dpProj.x-stw*0.5,dpProj.y-24,stw,18);
+        ctx.strokeRect(dpProj.x-stw*0.5,dpProj.y-24,stw,18);
+        ctx.fillStyle='#ffffff';
         ctx.textAlign='center';
         ctx.textBaseline='middle';
-        ctx.fillText(syncTxt,dpProj.x,dpProj.y-13.5);
+        ctx.fillText(syncTxt,dpProj.x,dpProj.y-15);
         ctx.restore();
       }
     }
 
     // ========================================================================
-    // 5. UPDATE 3D-PROJECTED SPATIAL CALLOUT PINS
+    // 5. UPDATE 3D-PROJECTED SPATIAL CALLOUT PINS (DOM-CACHED FOR ZERO LAG)
     // ========================================================================
     const labelBox=$('#journeySpatialLabels');
     if(labelBox){
@@ -1404,7 +1637,11 @@ function startJourney3DLoop(){
         if(placedPins.some(q=>Math.abs(p.x-q.x)<155&&Math.abs(p.y-q.y)<36))continue;
         placedPins.push(p);
       }
-      labelBox.innerHTML=placedPins.map(p=>`<div class="spatial-pin ${p.hi?'highlight':''}" style="left:${p.x}px;top:${p.y}px"><small>${p.tag}</small>${p.label}</div>`).join('');
+      const nextPinHTML=placedPins.map(p=>`<div class="spatial-pin ${p.hi?'highlight':''}" style="left:${p.x}px;top:${p.y}px"><small>${p.tag}</small>${p.label}</div>`).join('');
+      if(nextPinHTML!==lastPinHTML){
+        lastPinHTML=nextPinHTML;
+        labelBox.innerHTML=nextPinHTML;
+      }
     }
 
     ctx.restore();
@@ -1413,23 +1650,57 @@ function startJourney3DLoop(){
   jAnimFrame=requestAnimationFrame(frame);
 }
 
-// Interactive mouse/touch look-around on #journeyCanvas
+// Interactive 3D switch clicking, hovering, and look-around on #journeyCanvas
 (()=>{
   const canvas=$('#journeyCanvas');
   if(!canvas)return;
-  let dragging=false,sx=0,sy=0,sYaw=0,sPitch=0;
+  let dragging=false,sx=0,sy=0,sYaw=0,sPitch=0,downSwitch=null;
+
+  function findSwitchAt(clientX,clientY){
+    if(!jPadSwitchRects.length)return null;
+    const rect=canvas.getBoundingClientRect();
+    const mx=clientX-rect.left;
+    const my=clientY-rect.top;
+    for(const sw of jPadSwitchRects){
+      if(mx>=sw.minX&&mx<=sw.maxX&&my>=sw.minY&&my<=sw.maxY){
+        return sw;
+      }
+    }
+    return null;
+  }
+
   canvas.addEventListener('pointerdown',e=>{
+    const hit=findSwitchAt(e.clientX,e.clientY);
+    downSwitch=hit;
     dragging=true;sx=e.clientX;sy=e.clientY;sYaw=jUserYaw;sPitch=jUserPitch;
     canvas.setPointerCapture(e.pointerId);
   });
   canvas.addEventListener('pointermove',e=>{
-    if(!dragging)return;
-    jUserYaw=Math.max(-0.85,Math.min(0.85,sYaw+(e.clientX-sx)*0.0035));
-    jUserPitch=Math.max(-0.45,Math.min(0.45,sPitch-(e.clientY-sy)*0.0028));
+    if(!dragging){
+      const hit=findSwitchAt(e.clientX,e.clientY);
+      jHoveredSwitch=hit;
+      canvas.style.cursor=hit?'pointer':'grab';
+      return;
+    }
+    const dist=Math.hypot(e.clientX-sx,e.clientY-sy);
+    if(dist>6){
+      downSwitch=null;
+      canvas.style.cursor='grabbing';
+      jUserYaw=Math.max(-0.85,Math.min(0.85,sYaw+(e.clientX-sx)*0.0035));
+      jUserPitch=Math.max(-0.45,Math.min(0.45,sPitch-(e.clientY-sy)*0.0028));
+    }
   });
-  const end=()=>{dragging=false};
-  canvas.addEventListener('pointerup',end);
-  canvas.addEventListener('pointercancel',end);
+  canvas.addEventListener('pointerup',e=>{
+    if(downSwitch&&Math.hypot(e.clientX-sx,e.clientY-sy)<=8){
+      pressPadSwitch(downSwitch);
+    }
+    downSwitch=null;
+    dragging=false;
+    const hit=findSwitchAt(e.clientX,e.clientY);
+    jHoveredSwitch=hit;
+    canvas.style.cursor=hit?'pointer':'grab';
+  });
+  canvas.addEventListener('pointercancel',()=>{downSwitch=null;dragging=false;canvas.style.cursor='grab'});
 })();
 
 function stopJourneyAuto(){clearInterval(journeyAutoTimer);journeyAutoTimer=null;$('#journeyAuto').innerHTML='Auto tour <b>▶</b>'}
@@ -1514,9 +1785,12 @@ document.addEventListener('keydown',e=>{
   if(e.code==='Space'){e.preventDefault();toggleJourneyAuto()}
 });
 
-// Support deep-linking into any 3D architecture mode, instruction, or journey checkpoint via URL params
+// Support deep-linking into any 3D architecture mode, instruction, theme, or journey checkpoint via URL params
 (()=>{
   const params=new URLSearchParams(window.location.search);
+  if(params.get('theme')==='dark'){
+    document.body.classList.add('dark');
+  }
   const arch=params.get('arch');
   const rawCmd=params.get('cmd');
   const cmd=rawCmd==='memadd'?'addm':rawCmd;
@@ -1538,10 +1812,13 @@ document.addEventListener('keydown',e=>{
     $$('.reveal').forEach(el=>el.classList.add('visible'));
     document.getElementById(scrollTarget).scrollIntoView({behavior:'instant'});
   }
-  if(params.get('only')==='core3d'){
+  const onlyTarget=params.get('only');
+  if(onlyTarget==='core3d'){
     $$('.reveal').forEach(el=>el.classList.add('visible'));
     const vp=$('#coreViewport');
     if(vp){vp.style.position='fixed';vp.style.inset='0';vp.style.zIndex='99999';vp.style.height='100vh';vp.style.margin='0';}
+  }else if(onlyTarget&&document.getElementById(onlyTarget)){
+    $$('main > section').forEach(sec=>{if(sec.id!==onlyTarget)sec.style.display='none'});
   }
   if(params.get('journey')==='1'){
     openJourney();

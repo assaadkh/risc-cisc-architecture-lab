@@ -33,18 +33,18 @@
         </div>
       </div>
       <div class="hero-visual" aria-hidden="true">
-        <div class="chip risc-chip"><small>RISC CORE</small><strong>01</strong><div class="chip-grid"></div><span>LOAD / ALU / STORE</span></div>
+        <div class="chip risc-chip"><small>RISC CORE · ARM / RISC-V</small><strong>01</strong><div class="chip-grid"></div><span>LOAD / ALU / STORE</span></div>
         <div class="pulse"></div>
-        <div class="chip cisc-chip"><small>CISC CORE</small><strong>86</strong><div class="chip-grid dense"></div><span>MEMORY-TO-MEMORY</span></div>
+        <div class="chip cisc-chip"><small>CISC CORE · x86</small><strong>86</strong><div class="chip-grid dense"></div><span>MEMORY-TO-MEMORY</span></div>
         <div class="hero-stat stat-a"><b>5</b><span>pipeline stages</span></div>
         <div class="hero-stat stat-b"><b>1–6</b><span>cycles / instruction</span></div>
       </div>
     </section>
 
     <section class="concept-strip" aria-label="Core contrast">
-      <article><span class="num">01</span><div><b>RISC</b><p>Small, regular instructions optimized for fast pipelines and compiler scheduling.</p></div></article>
+      <article><span class="num">01</span><div><b>RISC (ARM / RISC-V)</b><p>Small, regular fixed-width instructions optimized for fast load–store pipelines and compiler scheduling.</p></div></article>
       <div class="versus">VS</div>
-      <article><span class="num">02</span><div><b>CISC</b><p>Rich, variable-length instructions that encode more work and improve code density.</p></div></article>
+      <article><span class="num">02</span><div><b>CISC (x86 / IA-32)</b><p>Rich, variable-length instructions that encode memory operands and translate internally into micro-ops (µops).</p></div></article>
     </section>
 
     <section class="sim-section" id="simulator">
@@ -555,6 +555,7 @@
   <div class="tour" id="tour" hidden role="dialog" aria-modal="true" aria-labelledby="tourTitle">
     <div class="tour-card"><button id="tourClose" aria-label="Close">×</button><span class="tour-step" id="tourStep">01 / 04</span><h2 id="tourTitle">Choose the workload</h2><p id="tourText">Start with one of three equivalent programs. Each preset loads matching memory into both machines.</p><div class="tour-dots"><i class="active"></i><i></i><i></i><i></i></div><button class="btn primary" id="tourNext">Next →</button></div>
   </div>
+  <script src="hand-mesh.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
