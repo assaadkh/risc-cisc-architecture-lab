@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="description" content="An interactive RISC vs CISC architecture simulator and learning lab." />
   <title>RISC ↔ CISC Architecture Lab</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='6' y='6' width='20' height='20' rx='2' fill='%23121410' stroke='%23d2eb63' stroke-width='2'/%3E%3Crect x='11' y='11' width='10' height='10' fill='%23d2eb63'/%3E%3Cpath d='M10 2v4M16 2v4M22 2v4M10 26v4M16 26v4M22 26v4M2 10h4M2 16h4M2 22h4M26 10h4M26 16h4M26 22h4' stroke='%23eab308' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -533,19 +534,73 @@
         <article><span>02 · DATAPATH</span><h3>Load–store vs memory operands</h3><div class="flow-viz"><i>REG</i><b>→</b><i>ALU</i><b>→</b><i>MEM</i></div><p>A load–store RISC ISA isolates memory access inside explicit <code>LW</code>/<code>SW</code> instructions while arithmetic stays register-to-register. CISC instructions can combine address generation, cache access, and ALU arithmetic inside one architectural command.</p></article>
         <article><span>03 · TRANSLATION</span><h3>Hardwired decode vs microcode</h3><div class="control-viz"><i></i><i></i><i></i><i></i><i></i></div><p>Simple RISC commands map directly to pipeline control signals in a single cycle. Complex CISC commands are cracked by hardware decoders or a Microcode ROM sequencer into multiple internal RISC-like micro-operations (µops).</p></article>
         <article><span>04 · PIPELINING</span><h3>Hazards & forwarding</h3><div class="format-viz"><i>IF</i><i>ID</i><i>EX</i><i>MEM</i><i>WB</i></div><p>Overlapping instructions creates data hazards (RAW dependencies) and control hazards (branches). Processors resolve data hazards with ALU-to-ALU forwarding paths and handle branches via prediction and speculative execution.</p></article>
-        <article><span>05 · DYNAMIC EXECUTION</span><h3>Renaming, scheduling & ROB</h3><div class="flow-viz"><i>RENAME</i><b>→</b><i>SCHED</i><b>→</b><i>ROB</i></div><p>High-performance cores map architectural registers (`EAX`, `R1`) onto a larger pool of physical registers to eliminate false dependencies, execute ready micro-ops out of order, and commit results in program order through a Reorder Buffer (ROB).</p></article>
+        <article><span>05 · DYNAMIC EXECUTION</span><h3>Renaming, scheduling & ROB</h3><div class="flow-viz"><i>RENAME</i><b>→</b><i>SCHED</i><b>→</b><i>ROB</i></div><p>High-performance cores map architectural registers (<code>EAX</code>, <code>R1</code>) onto a larger pool of physical registers to eliminate false dependencies, execute ready micro-ops out of order, and commit results in program order through a Reorder Buffer (ROB).</p></article>
         <article><span>06 · CONVERGENCE</span><h3>Code density, CPI & modern CPUs</h3><div class="format-viz"><i>BYTES</i><i>×</i><i>INSTR</i><i>×</i><i>CPI</i></div><p>Total execution time equals <code>Instructions × CPI × Clock Period</code>. Fewer architectural instructions do not guarantee higher speed. Modern CISC chips use RISC-like internal micro-op engines, while modern RISC ISAs add compressed and vector extensions.</p></article>
+      </div>
+
+      <div class="arch-matrix" aria-label="RISC vs CISC technical comparison matrix">
+        <div class="matrix-head">
+          <span class="deep-label">Side-by-side reference matrix</span>
+          <h3>RISC (ARM / RISC-V) vs. CISC (x86 / IA-32) at a glance</h3>
+        </div>
+        <div class="matrix-table-wrap">
+          <table class="matrix-table">
+            <thead>
+              <tr>
+                <th>Architectural Dimension</th>
+                <th class="risc-col">RISC · EDU-R32 (ARM / RISC-V Style)</th>
+                <th class="cisc-col">CISC · EDU-C86 (x86 / IA-32 Style)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><b>Instruction Width</b></td>
+                <td>Fixed <code>32-bit</code> (4-byte) aligned words</td>
+                <td>Variable <code>1 to 15 bytes</code> (prefixes, opcode, ModR/M, SIB, disp, imm)</td>
+              </tr>
+              <tr>
+                <td><b>Memory Access Rule</b></td>
+                <td>Strict <b>Load–Store</b>: only explicit <code>LW</code> / <code>SW</code> touch data cache</td>
+                <td><b>Register–Memory</b>: arithmetic ops (<code>ADD EAX, [mem]</code>) can access memory directly</td>
+              </tr>
+              <tr>
+                <td><b>Register File</b></td>
+                <td>Large uniform general-purpose file (<code>32 × 32-bit</code>, <code>R0–R31</code>)</td>
+                <td>Specialized architectural set (<code>EAX, EBX, ECX, EDX, ESI, EDI, ESP, EIP</code>) + physical rename pool</td>
+              </tr>
+              <tr>
+                <td><b>Decode Hardware</b></td>
+                <td>Single-cycle hardwired decoder; bit fields sit at fixed positions</td>
+                <td>Parallel length decoder + Complex Decoder + <b>Microcode ROM</b> producing internal <code>µops</code></td>
+              </tr>
+              <tr>
+                <td><b>Pipeline &amp; Scheduling</b></td>
+                <td>Regular 5-stage pipeline (<code>IF → ID → EX → MEM → WB</code>) with forwarding</td>
+                <td>Front-end <code>µop</code> queue → Register Renamer → Out-of-Order Scheduler → <b>Reorder Buffer (ROB)</b></td>
+              </tr>
+              <tr>
+                <td><b>Performance Trade-off</b></td>
+                <td>More instructions per program, but low <code>~1.0–1.5 CPI</code> and simple decode</td>
+                <td>Higher code density (fewer bytes/instructions), but variable <code>1–12+ cycles</code> per instruction</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 
     <section class="learn" id="learn">
       <div class="learn-copy"><p class="eyebrow"><span></span> Knowledge check</p><h2>Design is trade-off,<br>not a scoreboard.</h2><p>Modern processors blur the historical line: many CISC cores translate instructions into RISC-like micro-ops, while RISC ISAs continue to add specialized extensions.</p></div>
       <div class="quiz" id="quiz">
-        <div class="quiz-head"><span>Quick check</span><small id="quizProgress">1 / 3</small></div>
+        <div class="quiz-head"><span>Quick check</span><div class="quiz-meta"><b id="quizScore">SCORE 0 / 6</b><small id="quizProgress">1 / 6</small></div></div>
+        <div class="quiz-dots" id="quizDots" aria-hidden="true"></div>
         <h3 id="quizQuestion">Which design typically uses fixed-length instructions?</h3>
         <div id="quizOptions" class="quiz-options"></div>
         <p id="quizFeedback" class="quiz-feedback" aria-live="polite"></p>
-        <button id="nextQuestion" class="btn primary" hidden>Next question →</button>
+        <div class="quiz-actions">
+          <button id="nextQuestion" class="btn primary" hidden>Next question →</button>
+          <button id="restartQuiz" class="btn ghost" hidden>Restart quiz ↺</button>
+        </div>
       </div>
     </section>
   </main>
@@ -553,7 +608,7 @@
   <footer><div class="brand"><span class="brand-mark"><i></i><i></i><i></i></span><span>ARCHITECTURE <b>LAB</b></span></div><p>Educational model · Values are illustrative · Built for exploration</p><a href="#top">Back to top ↑</a></footer>
 
   <div class="tour" id="tour" hidden role="dialog" aria-modal="true" aria-labelledby="tourTitle">
-    <div class="tour-card"><button id="tourClose" aria-label="Close">×</button><span class="tour-step" id="tourStep">01 / 04</span><h2 id="tourTitle">Choose the workload</h2><p id="tourText">Start with one of three equivalent programs. Each preset loads matching memory into both machines.</p><div class="tour-dots"><i class="active"></i><i></i><i></i><i></i></div><button class="btn primary" id="tourNext">Next →</button></div>
+    <div class="tour-card"><button id="tourClose" aria-label="Close">×</button><span class="tour-step" id="tourStep">01 / 04</span><h2 id="tourTitle">Choose the workload</h2><p id="tourText">Start with one of four equivalent programs. Each preset loads matching memory into both machines.</p><div class="tour-dots"><i class="active"></i><i></i><i></i><i></i></div><button class="btn primary" id="tourNext">Next →</button></div>
   </div>
   <script src="hand-mesh.js"></script>
   <script src="app.js"></script>

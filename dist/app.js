@@ -72,7 +72,13 @@ function renderVerdict(){const r=states.risc,c=states.cisc,maxC=Math.max(r.cycle
 
 $('#presetSelect').addEventListener('change',e=>{selected=e.target.value;$('#presetHint').textContent=PRESETS[selected].hint;reset()});$('#resetBtn').onclick=reset;$('#stepBtn').onclick=step;$('#runBtn').onclick=run;$('#speedRange').oninput=e=>{const speeds=[1200,850,620,390,220];speed=speeds[e.target.value-1];$('#speedOut').textContent=['0.5×','0.75×','1.0×','1.5×','2.0×'][e.target.value-1];if(running){clearInterval(timer);timer=setInterval(step,speed)}};$('#themeBtn').onclick=()=>document.body.classList.toggle('dark');
 
-const tourData=[['Choose the workload','Start with one of three equivalent programs. Each preset loads matching memory into both machines.'],['Control the clock','Step once to inspect a single instruction, or Run to watch both models advance together.'],['Inspect the machine','Follow pipeline stages, micro-operations, register changes, and memory writes highlighted in real time.'],['Read the trade-off','The live finding compares instructions, cycles, CPI, and code bytes. No architecture wins every dimension.']];let tourIndex=0;function showTour(){tourIndex=0;updateTour();$('#tour').hidden=false}function updateTour(){const [t,p]=tourData[tourIndex];$('#tourStep').textContent=`0${tourIndex+1} / 04`;$('#tourTitle').textContent=t;$('#tourText').textContent=p;$$('.tour-dots i').forEach((x,i)=>x.classList.toggle('active',i===tourIndex));$('#tourNext').textContent=tourIndex===3?'Open simulator ↓':'Next →'}$('#tourBtn').onclick=showTour;$('#tourClose').onclick=()=>$('#tour').hidden=true;$('#tourNext').onclick=()=>{if(tourIndex===3){$('#tour').hidden=true;location.hash='simulator'}else{tourIndex++;updateTour()}};
+const tourData=[
+  ['Choose the workload','Start with any of the four equivalent programs (Sum, Memory Add, Expression, or Block Copy). Each preset loads matching data into both machines.'],
+  ['Step & compare in lockstep','Step once to inspect a single instruction, or Run to watch RISC (ARM/RISC-V style) and CISC (x86 style) execute side by side.'],
+  ['Explore the 3D Silicon Core & Journey','Scroll to the 3D Core Cutaway or click BEGIN 3D JOURNEY to stand at the hardware bench, press the 3D controller switches, and ride beside the silicon bus traces.'],
+  ['Read the trade-off','Compare instructions, cycles, CPI, and code bytes across the simulator, flowcharts, and reference matrix—no architecture wins every dimension.']
+];
+let tourIndex=0;function showTour(){tourIndex=0;updateTour();$('#tour').hidden=false}function updateTour(){const [t,p]=tourData[tourIndex];$('#tourStep').textContent=`0${tourIndex+1} / 04`;$('#tourTitle').textContent=t;$('#tourText').textContent=p;$$('.tour-dots i').forEach((x,i)=>x.classList.toggle('active',i===tourIndex));$('#tourNext').textContent=tourIndex===3?'Open simulator ↓':'Next →'}$('#tourBtn').onclick=showTour;$('#tourClose').onclick=()=>$('#tour').hidden=true;$('#tourNext').onclick=()=>{if(tourIndex===3){$('#tour').hidden=true;location.hash='simulator'}else{tourIndex++;updateTour()}};
 
 const quiz=[
   {q:'Which design typically uses fixed-length instructions?',a:['RISC','CISC','Both always do'],correct:0,why:'RISC instruction formats are usually fixed (such as 32 bits) with regular field positions, simplifying fetch and decode.'},
@@ -81,7 +87,45 @@ const quiz=[
   {q:'In a load–store RISC architecture, which instructions access data memory?',a:['Every ALU instruction','Only explicit load and store commands','Only branch instructions'],correct:1,why:'Arithmetic and logical instructions operate strictly on registers; only dedicated load/store commands read or write data memory.'},
   {q:'What is the purpose of Register Renaming and the Reorder Buffer (ROB)?',a:['To eliminate false register dependencies while committing results in program order','To slow down the clock','To replace the instruction cache'],correct:0,why:'Renaming maps architectural registers onto a larger pool of physical registers for out-of-order execution, while the ROB retires instructions in order.'},
   {q:'Why does executing fewer architectural instructions not automatically make a program faster?',a:['Because CPU time depends on Instructions × CPI × Clock Period','Because memory is infinitely fast','Because compilers ignore instruction count'],correct:0,why:'Complex instructions may require more cycles per instruction (CPI) or deeper decoding; true performance depends on the product of instruction count, CPI, and clock cycle time.'}
-];let qi=0;function renderQuiz(){const q=quiz[qi];$('#quizProgress').textContent=`${qi+1} / ${quiz.length}`;$('#quizQuestion').textContent=q.q;$('#quizFeedback').textContent='';$('#nextQuestion').hidden=true;$('#quizOptions').innerHTML=q.a.map((x,i)=>`<button data-i="${i}">${String.fromCharCode(65+i)}. ${x}</button>`).join('');$$('#quizOptions button').forEach(b=>b.onclick=()=>answerQuiz(+b.dataset.i))}function answerQuiz(i){const q=quiz[qi];$$('#quizOptions button').forEach((b,j)=>{b.disabled=true;if(j===q.correct)b.classList.add('correct');if(j===i&&i!==q.correct)b.classList.add('wrong')});$('#quizFeedback').textContent=(i===q.correct?'Correct — ':'Not quite — ')+q.why;$('#nextQuestion').hidden=false}$('#nextQuestion').onclick=()=>{qi=(qi+1)%quiz.length;renderQuiz()};
+];
+let qi=0, quizAnswers=new Array(quiz.length).fill(null);
+function renderQuiz(){
+  const q=quiz[qi];
+  const score=quizAnswers.reduce((acc,ans,idx)=>acc+(ans===quiz[idx].correct?1:0),0);
+  const answeredCount=quizAnswers.filter(x=>x!==null).length;
+  $('#quizProgress').textContent=`${qi+1} / ${quiz.length}`;
+  if($('#quizScore'))$('#quizScore').textContent=`SCORE ${score} / ${quiz.length}`;
+  if($('#quizDots')){
+    $('#quizDots').innerHTML=quiz.map((_,idx)=>{
+      const st=quizAnswers[idx]===null?'':(quizAnswers[idx]===quiz[idx].correct?'answered-ok':'answered-err');
+      return `<button type="button" class="${idx===qi?'active':''} ${st}" data-qidx="${idx}" aria-label="Question ${idx+1}"></button>`;
+    }).join('');
+    $$('#quizDots button').forEach(b=>b.onclick=()=>{qi=+b.dataset.qidx;renderQuiz()});
+  }
+  $('#quizQuestion').textContent=q.q;
+  const prevAns=quizAnswers[qi];
+  $('#quizOptions').innerHTML=q.a.map((x,i)=>{
+    const cls=prevAns===null?'':(i===q.correct?'correct':(i===prevAns?'wrong':''));
+    return `<button class="${cls}" ${prevAns!==null?'disabled':''} data-i="${i}">${String.fromCharCode(65+i)}. ${x}</button>`;
+  }).join('');
+  $$('#quizOptions button').forEach(b=>b.onclick=()=>answerQuiz(+b.dataset.i));
+  if(prevAns!==null){
+    $('#quizFeedback').textContent=(prevAns===q.correct?'Correct — ':'Not quite — ')+q.why;
+    $('#nextQuestion').hidden=false;
+    $('#nextQuestion').textContent=qi===quiz.length-1?'Review from Q1 →':'Next question →';
+    if($('#restartQuiz'))$('#restartQuiz').hidden=answeredCount<quiz.length;
+  }else{
+    $('#quizFeedback').textContent='';
+    $('#nextQuestion').hidden=true;
+    if($('#restartQuiz'))$('#restartQuiz').hidden=answeredCount===0;
+  }
+}
+function answerQuiz(i){
+  quizAnswers[qi]=i;
+  renderQuiz();
+}
+$('#nextQuestion').onclick=()=>{qi=(qi+1)%quiz.length;renderQuiz()};
+if($('#restartQuiz'))$('#restartQuiz').onclick=()=>{qi=0;quizAnswers=new Array(quiz.length).fill(null);renderQuiz()};
 reset();renderQuiz();
 
 // Detailed single-instruction datapath explorer.
@@ -143,7 +187,7 @@ const DEEP_COMMANDS={
 let deepArch='risc',deepCommand=0,deepPhase=0,deepTimer=null;
 function deepData(){return DEEP_COMMANDS[deepArch][deepCommand]}
 function renderDeepCommands(){const list=$('#deepCommandList');list.innerHTML=DEEP_COMMANDS[deepArch].map((c,i)=>`<button class="${i===deepCommand?'active':''}" data-command="${i}"><code>${c.asm}</code><span>${c.short}</span></button>`).join('');list.querySelectorAll('button').forEach(b=>b.onclick=()=>{deepCommand=+b.dataset.command;deepPhase=0;stopDeep();renderDeep()})}
-function renderDeep(){const d=deepData(),p=d.phases[deepPhase];$('#deep-dive').classList.toggle('cisc-mode',deepArch==='cisc');$$('[data-deep-arch]').forEach(b=>b.classList.toggle('active',b.dataset.deepArch===deepArch));$('#deepModelTitle').textContent=deepArch==='risc'?'RISC load–store model':'CISC x86-style model';$('#deepModelNote').textContent=deepArch==='risc'?'Fixed 32-bit instructions and a load–store datapath. Only explicit load/store commands access data memory.':'Variable-length instructions decoded into internal micro-operations. Some operands and state changes are implicit.';$('#deepAsm').textContent=d.asm;$('#deepAsm').style.color=deepArch==='risc'?'var(--risc)':'var(--cisc)';$('#deepPurpose').textContent=d.purpose;$('#binaryHex').textContent=d.hex;$('#binaryFields').innerHTML=d.fields.map(f=>`<i style="flex:${f[2]}"><small>${f[0]}</small><br>${f[1]}</i>`).join('');$('#phaseStrip').innerHTML=d.phases.map((x,i)=>`<div class="phase-chip ${i===deepPhase?'active':i<deepPhase?'done':''}"><small>0${i+1}</small><b>${x[0]}</b></div>`).join('');$('#phaseTitle').textContent=p[0];$('#phaseCounter').textContent=`${deepPhase+1} / ${d.phases.length}`;$('#phaseNumber').textContent=String(deepPhase+1).padStart(2,'0');$('#phaseHeading').textContent=p[1];$('#phaseExplanation').textContent=p[2];$('#busValue').textContent=p[3];
+function renderDeep(){const d=deepData(),p=d.phases[deepPhase];$('#deep-dive').classList.toggle('cisc-mode',deepArch==='cisc');$$('[data-deep-arch]').forEach(b=>b.classList.toggle('active',b.dataset.deepArch===deepArch));$('#deepModelTitle').textContent=deepArch==='risc'?'RISC load–store model':'CISC x86-style model';$('#deepModelNote').textContent=deepArch==='risc'?'Fixed 32-bit instructions and a load–store datapath. Only explicit load/store commands access data memory.':'Variable-length instructions decoded into internal micro-operations. Some operands and state changes are implicit.';$('#deepAsm').textContent=d.asm;$('#deepAsm').style.color=deepArch==='risc'?'var(--risc)':'var(--cisc)';$('#deepPurpose').textContent=d.purpose;$('#binaryHex').textContent=d.hex;$('#binaryFields').innerHTML=d.fields.map(f=>`<i style="flex:${f[2]}"><small>${f[0]}</small><br>${f[1]}</i>`).join('');$('#phaseStrip').innerHTML=d.phases.map((x,i)=>`<div class="phase-chip ${i===deepPhase?'active':i<deepPhase?'done':''}" data-phase-idx="${i}" title="Jump to phase ${i+1}: ${x[0]}"><small>0${i+1}</small><b>${x[0]}</b></div>`).join('');$$('#phaseStrip .phase-chip').forEach(ch=>ch.onclick=()=>{deepPhase=+ch.dataset.phaseIdx;stopDeep();renderDeep()});$('#phaseTitle').textContent=p[0];$('#phaseCounter').textContent=`${deepPhase+1} / ${d.phases.length}`;$('#phaseNumber').textContent=String(deepPhase+1).padStart(2,'0');$('#phaseHeading').textContent=p[1];$('#phaseExplanation').textContent=p[2];$('#busValue').textContent=p[3];
   const allSignals=[...new Set(d.phases.flatMap(x=>x[4]))];$('#controlSignals').innerHTML=allSignals.map(x=>`<span class="${p[4].includes(x)?'on':'off'}">${x}</span>`).join('');$('#deepState').innerHTML=d.state.map(x=>`<div class="state-row"><span>${x[0]}</span><b>${x[1]}</b><i>→</i><b>${deepPhase===d.phases.length-1?x[2]:x[1]}</b></div>`).join('');
   $$('.datapath .unit').forEach(x=>{x.classList.toggle('active',p[5].includes(x.dataset.unit));x.classList.toggle('complete',false);x.classList.toggle('processing',p[5].includes(x.dataset.unit))});$$('.datapath path').forEach(x=>x.classList.toggle('active',p[6].includes(x.dataset.path)));$('#unitPc').textContent=d.units.pc;$('#unitImem').textContent=d.units.imem;$('#unitDecode').textContent=d.units.decode;$('#unitRegs').textContent=d.units.regs;$('#unitAlu').textContent=d.units.alu;$('#unitMemory').textContent=d.units.memory;$('#unitWriteback').textContent=d.units.writeback;$('#decodeUnitName').textContent=deepArch==='risc'?'CONTROL':'µCODE';$('#deepLength').textContent=d.length;$('#deepUops').textContent=d.uops;$('#deepMemAccess').textContent=d.memory;$('#deepTakeaway').innerHTML=`<strong>Takeaway:</strong> ${d.takeaway}`;$('#deepStep').innerHTML=deepPhase===d.phases.length-1?'Restart <b>↺</b>':'Next phase <b>→</b>';renderDeepCommands()}
 function stopDeep(){clearInterval(deepTimer);deepTimer=null;$('#deepRun').innerHTML='Run command <b>▶</b>'}
@@ -329,6 +373,15 @@ $('#explodeCore').onclick=()=>{
   const endDrag=()=>{dragging=false;$('#chipModel').classList.remove('dragging')};
   vp.addEventListener('pointerup',endDrag);
   vp.addEventListener('pointercancel',endDrag);
+  $$('[data-core-unit]').forEach(u=>{
+    u.addEventListener('click',e=>{
+      if(Math.hypot(e.clientX-sx,e.clientY-sy)>6)return;
+      const unitKey=u.dataset.coreUnit;
+      const steps=coreProgram().steps;
+      const idx=steps.findIndex(s=>s.unit===unitKey);
+      if(idx!==-1){stopCore();coreStepIndex=idx;coreCycle=idx;renderCore()}
+    });
+  });
 })();
 renderCoreInstructionButtons();renderCore();
 
@@ -514,7 +567,7 @@ let jPrevTrav=[-95,68,-295],jTransitionProg=1,jUserYaw=0,jUserPitch=0;
 function journeyProgram(){return coreProgram()}
 function createJourneyParticles(){
   if(!$('#journeyStars').children.length){
-    $('#journeyStars').innerHTML=Array.from({length:65},(_,i)=>`<i style="left:${(i*37)%100}%;top:${(i*61)%100}%;--duration:${3+(i%7)}s;--delay:-${i%6}s;--dx:${(i%2?1:-1)*(10+i%45)}px;--dy:${20+i%60}px"></i>`).join('');
+    $('#journeyStars').innerHTML=Array.from({length:24},(_,i)=>`<i style="left:${(i*37)%100}%;top:${(i*61)%100}%;--duration:${4+(i%6)}s;--delay:-${i%5}s;--dx:${(i%2?1:-1)*(10+i%35)}px;--dy:${20+i%45}px"></i>`).join('');
   }
 }
 function journeyTone(frequency=240,duration=.16){
@@ -606,8 +659,11 @@ function renderJourney(){
       }
     };
   });
-  const bits=step.bits.padStart(32,'0').slice(-32);
-  $('#journeyBits').innerHTML=[...bits].map((bit,i)=>`<i style="left:${4+(i*13)%92}%;top:${6+(i*19)%82}%;--speed:${3+i%4}s;--drift:${(i%2?1:-1)*(15+i%35)}px">${bit}</i>`).join('');
+  const bits=step.bits.padStart(32,'0').slice(-16);
+  if($('#journeyBits').dataset.lastBits!==bits){
+    $('#journeyBits').dataset.lastBits=bits;
+    $('#journeyBits').innerHTML=[...bits].map((bit,i)=>`<i style="left:${6+(i*17)%88}%;top:${8+(i*23)%78}%;--speed:${3.5+i%4}s;--drift:${(i%2?1:-1)*(14+i%28)}px">${bit}</i>`).join('');
+  }
 }
 
 // ============================================================================
@@ -726,6 +782,10 @@ function startJourney3DLoop(){
 
   function frame(now){
     if($('#cpuJourney').hidden)return;
+    if(document.hidden){
+      jAnimFrame=requestAnimationFrame(frame);
+      return;
+    }
     const t=now*0.001;
     // Cap DPR at 1.5 for ultra-smooth 60fps canvas rendering without HiDPI lag
     const dpr=Math.min(window.devicePixelRatio||1,1.5);
