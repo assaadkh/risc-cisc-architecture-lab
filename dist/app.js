@@ -447,68 +447,55 @@ const DIE_LAYOUT_3D={
   }
 };
 
-// 3D Checkpoints for the prelude & exit stages (camPos, lookAt, travelerPos, traceStart, traceEnd)
+// 3D Checkpoints for the prelude, internal die, & exit stages (cam, look, traceFrom, traceTo)
 function getStage3DCoords(step,idx,route){
-  const isCisc=coreArch==='cisc';
   const layout=DIE_LAYOUT_3D[coreArch];
   if(step.scene==='outside'){
     return {
       cam:[0,138,-415],
       look:[0,22,-165],
-      traveler:[0,22,-214],
       traceFrom:[0,18,-214],
-      traceTo:[0,22,-165],
-      dataLabel:`LAUNCH SIGNAL: ${journeyProgram().asm}`
+      traceTo:[0,22,-165]
     };
   }
   if(step.scene==='bench'){
     return {
       cam:[0,56,-225],
       look:[0,20,-125],
-      traveler:[0,24,-168],
       traceFrom:[0,18,-214],
-      traceTo:[0,22,-145],
-      dataLabel:`CONTROLLER SERIALIZER: ${journeyProgram().asm}`
+      traceTo:[0,22,-145]
     };
   }
   if(step.scene==='board'){
     return {
       cam:[-36,40,-160],
       look:[0,20,-30],
-      traveler:[-14,24,-96],
       traceFrom:[0,22,-165],
-      traceTo:[0,22,-24],
-      dataLabel:`PCB TRACE DATA: ${step.value}`
+      traceTo:[0,22,-24]
     };
   }
   if(step.scene==='package'){
     return {
       cam:[-48,46,-92],
       look:[0,26,5],
-      traveler:[-6,27,-34],
       traceFrom:[-14,22,-85],
-      traceTo:[0,26,-8],
-      dataLabel:`SOCKET → ${isCisc?'EDU-C86':'EDU-R32'}`
+      traceTo:[0,26,-8]
     };
   }
   if(step.scene==='pins'){
     return {
       cam:[-26,16,-48],
       look:[0,12,18],
-      traveler:[0,14,-10],
       traceFrom:[0,22,-26],
-      traceTo:[0,4,6],
-      dataLabel:`PIN BUS: ${step.value}`
+      traceTo:[0,4,6]
     };
   }
   if(step.scene==='substrate'){
     return {
       cam:[-34,-18,-42],
       look:[0,-72,15],
-      traveler:[0,-45,-4],
       traceFrom:[0,6,-6],
-      traceTo:[0,-112,-15],
-      dataLabel:`COPPER VIA → DIE BUMP`
+      traceTo:[0,-112,-15]
     };
   }
   if(step.scene==='die'){
@@ -516,10 +503,8 @@ function getStage3DCoords(step,idx,route){
     return {
       cam:[-85,12,-335],
       look:[0,-115,5],
-      traveler:[firstUnit[0]*0.6,-110,firstUnit[1]*0.6],
       traceFrom:[0,-112,-35],
-      traceTo:[firstUnit[0],-114,firstUnit[1]],
-      dataLabel:`ON-DIE BUS → ${firstUnit[5]||'FRONT END'}`
+      traceTo:[firstUnit[0],-114,firstUnit[1]]
     };
   }
   if(step.scene==='exit'){
@@ -527,17 +512,14 @@ function getStage3DCoords(step,idx,route){
     return {
       cam:[0,-15,-290],
       look:[15,-112,25],
-      traveler:[prevUnit[0]*0.4,-68,prevUnit[1]*0.4],
       traceFrom:[prevUnit[0],-112,prevUnit[1]],
-      traceTo:[0,-40,-90],
-      dataLabel:`ARCHITECTURAL RESULT: ${step.value}`
+      traceTo:[0,-40,-90]
     };
   }
-  // Internal silicon stage: camera rides right beside the active trace with clear view of silicon macro top arrays!
+  // Internal silicon stage: camera rides right beside the active trace with clear view of silicon macro top arrays
   const cur=layout[step.unit]||[0,0,90,36,68,'UNIT'];
   const prevStep=route[idx-1];
   const prev=prevStep&&layout[prevStep.unit]?layout[prevStep.unit]:[cur[0],-198,30,10,20];
-  const mx=(prev[0]+cur[0])*0.5, mz=(prev[1]+cur[1])*0.5;
   const dx=cur[0]-prev[0], dz=cur[1]-prev[1];
   const dist=Math.hypot(dx,dz)||1;
   const nx=dx/dist, nz=dz/dist;
@@ -550,19 +532,16 @@ function getStage3DCoords(step,idx,route){
   return {
     cam:[travX-nx*118+sideX*0.75, -46, travZ-nz*118+sideZ*0.75],
     look:[cur[0], -112, cur[1]],
-    traveler:[travX, -108, travZ],
     traceFrom:tFrom,
     traceTo:tTo,
-    unitBox:cur,
-    prevPos:[mx, -114, mz],
-    dataLabel:step.value
+    unitBox:cur
   };
 }
 
 let journeyIndex=0,journeyAutoTimer=null,journeySoundOn=false,journeyAudio=null,journeyTraveling=false;
-let jAnimFrame=null,jCamPos=[-45,255,-560],jCamLook=[0,62,-130],jTravPos=[-55,68,-265];
-let jTargetCam=[-45,255,-560],jTargetLook=[0,62,-130],jTargetTrav=[-55,68,-265];
-let jPrevTrav=[-95,68,-295],jTransitionProg=1,jUserYaw=0,jUserPitch=0;
+let jAnimFrame=null,jCamPos=[-45,255,-560],jCamLook=[0,62,-130];
+let jTargetCam=[-45,255,-560],jTargetLook=[0,62,-130];
+let jUserYaw=0,jUserPitch=0;
 
 function journeyProgram(){return coreProgram()}
 function createJourneyParticles(){
@@ -608,18 +587,11 @@ function journeyRoute(){
 function updateJourneyTargets(instant=false){
   const route=journeyRoute(),step=route[journeyIndex];
   const coords=getStage3DCoords(step,journeyIndex,route);
-  jPrevTrav=[...jTravPos];
   jTargetCam=coords.cam;
   jTargetLook=coords.look;
-  jTargetTrav=coords.traveler;
   if(instant){
     jCamPos=[...jTargetCam];
     jCamLook=[...jTargetLook];
-    jTravPos=[...jTargetTrav];
-    jPrevTrav=[...jTargetTrav];
-    jTransitionProg=1;
-  }else{
-    jTransitionProg=0;
   }
 }
 
@@ -630,7 +602,6 @@ function renderJourney(){
   $('#cpuJourney').classList.toggle('cisc-journey',coreArch==='cisc');
   $('#cpuJourney').classList.toggle('journey-complete',journeyIndex===last);
   if($('#journeyHeaderLabel'))$('#journeyHeaderLabel').textContent=archLabel;
-  $('#journeyPackageMark').textContent=coreArch==='cisc'?'CISC · EDU-C86':'RISC · EDU-R32';
   $('#journeyArch').textContent=`${archLabel} · ${program.asm}`;
   $('#journeyProgressText').textContent=`CHECKPOINT ${String(journeyIndex+1).padStart(2,'0')} / ${String(route.length).padStart(2,'0')}`;
   $('#journeyProgressBar').style.width=`${(journeyIndex+1)/route.length*100}%`;
@@ -642,7 +613,7 @@ function renderJourney(){
   $('#journeyIndex').textContent=String(journeyIndex+1).padStart(2,'0');
   $('#journeyStage').textContent=`CHECKPOINT ${String(journeyIndex+1).padStart(2,'0')} · ${meta[2]}`;
   $('#journeyNarrationTitle').textContent=step.title;
-  $('#journeyNarrationText').textContent=step.text+' (Educational model simplified for clarity.)';
+  $('#journeyNarrationText').textContent=step.text;
   $('#journeyPacketState').textContent=meta[3];
   $('#journeyVelocity').textContent=journeyTraveling?'14.4 units/cycle (TRACE TRANSPORT)':journeyIndex===last?'0.0 · RESULT COMMITTED':'1.0 units/cycle (ALONGSIDE DATA)';
   $('#journeyPrevious').textContent=journeyIndex?(JOURNEY_UNITS[route[journeyIndex-1].unit]?.[0]||'Previous stage'):'Outside Test Bench';
@@ -803,9 +774,7 @@ function startJourney3DLoop(){
     for(let i=0;i<3;i++){
       jCamPos[i]+=(jTargetCam[i]-jCamPos[i])*lerpRate;
       jCamLook[i]+=(jTargetLook[i]-jCamLook[i])*lerpRate;
-      jTravPos[i]+=(jTargetTrav[i]-jTravPos[i])*(lerpRate*1.15);
     }
-    jTransitionProg=Math.min(1,jTransitionProg+0.032);
 
     const isCisc=coreArch==='cisc';
     const accent=isCisc?'#60a5fa':'#4ade80';
@@ -822,11 +791,20 @@ function startJourney3DLoop(){
     ctx.fillStyle=bg;
     ctx.fillRect(0,0,w,h);
 
-    // Camera basis with user interactive look offsets
-    const camX=jCamPos[0], camY=jCamPos[1], camZ=jCamPos[2];
+    // Camera basis with user interactive look offsets & portrait mobile pullback
+    const isMobile=w<680;
+    let camX=jCamPos[0], camY=jCamPos[1], camZ=jCamPos[2];
     let fx=jCamLook[0]-camX, fy=jCamLook[1]-camY, fz=jCamLook[2]-camZ;
     const flen=Math.hypot(fx,fy,fz)||1;
     fx/=flen; fy/=flen; fz/=flen;
+
+    if(w<h){
+      // Pull camera back along view ray on portrait phones so full bench & silicon die fit horizontally
+      const pullback=(1-w/Math.max(1,h))*150;
+      camX-=fx*pullback;
+      camY-=fy*pullback*0.75;
+      camZ-=fz*pullback;
+    }
 
     if(jUserYaw||jUserPitch){
       const cy=Math.cos(jUserYaw), sy=Math.sin(jUserYaw);
@@ -841,7 +819,8 @@ function startJourney3DLoop(){
     const rlen=Math.hypot(rx,ry,rz)||1;
     rx/=rlen; ry/=rlen; rz/=rlen;
     const ux=fy*rz-fz*ry, uy=fz*rx-fx*rz, uz=fx*ry-fy*rx;
-    const focal=Math.min(w,h)*0.88;
+    const focal=w<h?w*0.72:Math.min(w,h)*0.88;
+    const projCenterY=isMobile?h*0.54:h*0.5;
 
     function project(px,py,pz){
       const dx=px-camX, dy=py-camY, dz=pz-camZ;
@@ -850,7 +829,7 @@ function startJourney3DLoop(){
       const cx=dx*rx+dy*ry+dz*rz;
       const cy=dx*ux+dy*uy+dz*uz;
       const s=focal/cz;
-      return {x:w*0.5+cx*s, y:h*0.5-cy*s, z:cz, s};
+      return {x:w*0.5+cx*s, y:projCenterY-cy*s, z:cz, s};
     }
 
     function drawLine3D(p1,p2,color,width=1.5,dash=null){
@@ -1180,9 +1159,9 @@ function startJourney3DLoop(){
         ctx.save();
         ctx.textAlign='center';
         ctx.textBaseline='middle';
-        ctx.font='900 9.5px ui-monospace,monospace';
+        ctx.font=isMobile?'900 8.5px ui-monospace,monospace':'900 9.5px ui-monospace,monospace';
         const activeSw=(jPressedSwitch&&now-jPressedSwitch.time<550)?jPressedSwitch:jHoveredSwitch;
-        const oledText=activeSw?`▶ ${activeSw.desc}`:`PAD READY · ${journeyProgram().asm} (CLICK ANY SWITCH)`;
+        const oledText=activeSw?`▶ ${activeSw.desc}`:(isMobile?`PAD READY · ${journeyProgram().asm}`:`PAD READY · ${journeyProgram().asm} (CLICK ANY SWITCH)`);
         const otw=ctx.measureText(oledText).width+16;
         ctx.fillStyle='rgba(2,13,9,0.92)';
         ctx.strokeStyle=accent;
@@ -1240,7 +1219,6 @@ function startJourney3DLoop(){
         }
       }
       jPadSwitchRects=nextSwitchRects;
-      spatialPins.push({pos:[0,38,-204],tag:'INTERACTIVE HARDWARE CONTROLLER',label:`CLICK 3D SWITCHES · ${journeyProgram().asm}`,hi:step.scene==='outside'});
 
       // ======================================================================
       // REALISTIC MOTHERBOARD PCB, VRM CAPACITORS, RAM & CONTROLLER IC CUTAWAY
@@ -1650,7 +1628,7 @@ function startJourney3DLoop(){
     // 4. SYNCHRONIZED BUS PACKET TRANSPONDER & CALLOUT (NO DUPLICATE OVERDRAW)
     // ========================================================================
     const curCoords=getStage3DCoords(step,journeyIndex,route);
-    if(curCoords.traceFrom&&curCoords.traceTo){
+    if(curCoords.traceFrom&&curCoords.traceTo&&step.scene!=='outside'){
       const tf=curCoords.traceFrom, tt=curCoords.traceTo;
       const uSync=0.52+Math.sin(t*2.6)*0.16;
       const dpx=tf[0]+(tt[0]-tf[0])*uSync;
@@ -1661,18 +1639,19 @@ function startJourney3DLoop(){
       const dpProj=project(dpx,dpy+6.5,dpz);
       if(dpProj&&dpProj.z<520){
         ctx.save();
-        ctx.font='900 10px ui-monospace,monospace';
-        const syncTxt=`BUS PACKET · ${step.value}`;
-        const stw=ctx.measureText(syncTxt).width+18;
+        ctx.font=isMobile?'900 8.5px ui-monospace,monospace':'900 10px ui-monospace,monospace';
+        const syncTxt=isMobile?step.value:`BUS PACKET · ${step.value}`;
+        const stw=ctx.measureText(syncTxt).width+16;
+        const bx=Math.max(stw*0.5+8,Math.min(w-stw*0.5-8,dpProj.x));
         ctx.fillStyle='rgba(4,12,9,0.92)';
         ctx.strokeStyle=accentBright;
-        ctx.lineWidth=1.3;
-        ctx.fillRect(dpProj.x-stw*0.5,dpProj.y-24,stw,18);
-        ctx.strokeRect(dpProj.x-stw*0.5,dpProj.y-24,stw,18);
+        ctx.lineWidth=1.2;
+        ctx.fillRect(bx-stw*0.5,dpProj.y-24,stw,18);
+        ctx.strokeRect(bx-stw*0.5,dpProj.y-24,stw,18);
         ctx.fillStyle='#ffffff';
         ctx.textAlign='center';
         ctx.textBaseline='middle';
-        ctx.fillText(syncTxt,dpProj.x,dpProj.y-15);
+        ctx.fillText(syncTxt,bx,dpProj.y-15);
         ctx.restore();
       }
     }
@@ -1682,25 +1661,29 @@ function startJourney3DLoop(){
     // ========================================================================
     const labelBox=$('#journeySpatialLabels');
     if(labelBox){
-      const visiblePins=[];
-      for(const pin of spatialPins){
-        const pr=project(pin.pos[0],pin.pos[1],pin.pos[2]);
-        if(!pr||pr.z>950||pr.z<15)continue;
-        if(pr.x<60||pr.x>w-60||pr.y<55||pr.y>h-45)continue;
-        if(pr.x<390&&pr.y<365)continue;
-        visiblePins.push({...pin,x:Math.round(pr.x),y:Math.round(pr.y),z:pr.z});
-      }
-      visiblePins.sort((a,b)=>(b.hi?1:0)-(a.hi?1:0)||a.z-b.z);
-      const placedPins=[];
-      for(const p of visiblePins){
-        if(placedPins.length>=5)break;
-        if(placedPins.some(q=>Math.abs(p.x-q.x)<155&&Math.abs(p.y-q.y)<36))continue;
-        placedPins.push(p);
-      }
-      const nextPinHTML=placedPins.map(p=>`<div class="spatial-pin ${p.hi?'highlight':''}" style="left:${p.x}px;top:${p.y}px"><small>${p.tag}</small>${p.label}</div>`).join('');
-      if(nextPinHTML!==lastPinHTML){
-        lastPinHTML=nextPinHTML;
-        labelBox.innerHTML=nextPinHTML;
+      if(isMobile){
+        if(lastPinHTML!==''){lastPinHTML='';labelBox.innerHTML=''}
+      }else{
+        const visiblePins=[];
+        for(const pin of spatialPins){
+          const pr=project(pin.pos[0],pin.pos[1],pin.pos[2]);
+          if(!pr||pr.z>950||pr.z<15)continue;
+          if(pr.x<60||pr.x>w-60||pr.y<55||pr.y>h-45)continue;
+          if(pr.x<390&&pr.y<365)continue;
+          visiblePins.push({...pin,x:Math.round(pr.x),y:Math.round(pr.y),z:pr.z});
+        }
+        visiblePins.sort((a,b)=>(b.hi?1:0)-(a.hi?1:0)||a.z-b.z);
+        const placedPins=[];
+        for(const p of visiblePins){
+          if(placedPins.length>=5)break;
+          if(placedPins.some(q=>Math.abs(p.x-q.x)<155&&Math.abs(p.y-q.y)<36))continue;
+          placedPins.push(p);
+        }
+        const nextPinHTML=placedPins.map(p=>`<div class="spatial-pin ${p.hi?'highlight':''}" style="left:${p.x}px;top:${p.y}px"><small>${p.tag}</small>${p.label}</div>`).join('');
+        if(nextPinHTML!==lastPinHTML){
+          lastPinHTML=nextPinHTML;
+          labelBox.innerHTML=nextPinHTML;
+        }
       }
     }
 
