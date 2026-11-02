@@ -205,79 +205,79 @@ $$('[data-flow-run]').forEach(button=>button.onclick=()=>runFlow(button.dataset.
 // 3D processor cores: animate values through architecture-specific cutaways.
 const RISC_CORE_PROGRAMS={
   add:{asm:'ADD R3, R1, R2',label:'Register arithmetic',steps:[
-    {unit:'pc',title:'Program counter presents the address',text:'PC places 0x0040 on the instruction-address trace. The next sequential address (0x0044) is prepared in parallel.',value:'PC = 0x0040',xy:[11,20],path:[],bits:'0000000001000000'},
-    {unit:'icache',title:'Instruction cache returns 32 bits',text:'Traveling beside the fetch trace into L1 I-Cache: one aligned 32-bit RISC instruction is read in a single cycle.',value:'0x002081B3',xy:[30,20],path:['pc-icache'],bits:'00000000001000001000000110110011'},
-    {unit:'decoder',title:'Control decodes fixed fields',text:'Inside the Control Decoder: opcode 0110011 selects register arithmetic. Fixed bit positions immediately identify R1, R2, and R3.',value:'op=0110011 · rd=R3',xy:[53,20],path:['icache-decode'],bits:'011001100011000100010010'},
-    {unit:'regs',title:'Register file releases two operands',text:'Riding beside the register-select traces into the 32×32 Register File: two read ports simultaneously place R1=7 and R2=12 onto the operand traces.',value:'R1=7 · R2=12',xy:[80,20],path:['decode-regs'],bits:'0000011100001100'},
-    {unit:'alu',title:'ALU performs one addition',text:'Transported alongside operands 7 and 12 into the ALU: the adder computes 19 in one cycle and bypasses Data Memory entirely.',value:'7 + 12 = 19',xy:[54,60],path:['regs-alu','decode-alu'],bits:'0000000000010011'},
-    {unit:'writeback',title:'Result travels on the writeback trace',text:'Riding beside the Writeback Bus with result 19: RegWrite and destination R3 are asserted.',value:'WB bus = 19',xy:[75,82],path:['alu-writeback'],bits:'0000000000010011'},
-    {unit:'regs',title:'R3 commits on the clock edge',text:'Returning along the writeback trace to the Register File: R3 latches 19 on the rising clock edge.',value:'R3 ← 19',xy:[80,20],path:['writeback-regs'],bits:'0000000000010011'}]},
+    {unit:'pc',title:'Program counter outputs fetch address',text:'The Program Counter drives 0x0040 onto the instruction address bus while the +4 adder computes the next sequential address (0x0044) in parallel.',value:'PC = 0x0040',xy:[11,20],path:[],bits:'0000000001000000'},
+    {unit:'icache',title:'L1 instruction cache returns 32-bit word',text:'L1 Instruction Cache indexes address 0x0040 and outputs the aligned 32-bit RISC instruction word (0x002081B3) in a single clock cycle.',value:'0x002081B3',xy:[30,20],path:['pc-icache'],bits:'00000000001000001000000110110011'},
+    {unit:'decoder',title:'Hardwired control decodes fixed fields',text:'The Control Decoder inspects opcode 0110011 to select register arithmetic while fixed bit positions directly wire rs1=R1, rs2=R2, and rd=R3.',value:'op=0110011 · rd=R3',xy:[53,20],path:['icache-decode'],bits:'011001100011000100010010'},
+    {unit:'regs',title:'Register file drives dual source operands',text:'Two independent read ports in the 32×32 Register File simultaneously read R1=7 and R2=12 and drive both 32-bit operands onto the ALU input buses.',value:'R1=7 · R2=12',xy:[80,20],path:['decode-regs'],bits:'0000011100001100'},
+    {unit:'alu',title:'ALU executes 32-bit integer addition',text:'The Arithmetic Logic Unit adds operands 7 and 12 in one clock cycle to produce 19, bypassing the Data Cache stage completely.',value:'7 + 12 = 19',xy:[54,60],path:['regs-alu','decode-alu'],bits:'0000000000010011'},
+    {unit:'writeback',title:'Writeback bus routes ALU result',text:'The Writeback multiplexer selects ALU result 19 and asserts RegWrite along with destination index R3.',value:'WB bus = 19',xy:[75,82],path:['alu-writeback'],bits:'0000000000010011'},
+    {unit:'regs',title:'Destination register R3 latches result',text:'On the rising clock edge, write port W1 commits value 19 into architectural register R3.',value:'R3 ← 19',xy:[80,20],path:['writeback-regs'],bits:'0000000000010011'}]},
   load:{asm:'LW R4, 8(R1)',label:'Load from memory',steps:[
-    {unit:'pc',title:'Program counter presents the address',text:'PC places 0x0044 on the fetch trace to request the load instruction.',value:'PC = 0x0044',xy:[11,20],path:[],bits:'0000000001000100'},
-    {unit:'icache',title:'Instruction cache fetches LW',text:'Riding beside the fetch trace into L1 I-Cache: the fixed 32-bit LW encoding is returned.',value:'0x0080A203',xy:[30,20],path:['pc-icache'],bits:'00000000100000001010001000000011'},
-    {unit:'decoder',title:'Decoder extracts base and offset',text:'Inside the Control Decoder: base register R1, destination R4, and sign-extended offset +8 are extracted.',value:'base=R1 · imm=8',xy:[53,20],path:['icache-decode'],bits:'000010000001010001000001'},
-    {unit:'regs',title:'Register file reads the base address',text:'Traveling with the register index into the Register File: R1 supplies base address 1000.',value:'R1 = 1000',xy:[80,20],path:['decode-regs'],bits:'0000001111101000'},
-    {unit:'alu',title:'ALU calculates effective memory address',text:'Riding beside base 1000 and offset 8 into the ALU: addition produces effective address 1008.',value:'EA = 1000 + 8 = 1008',xy:[54,60],path:['regs-alu','decode-alu'],bits:'0000001111110000'},
-    {unit:'dcache',title:'Data cache reads word at 1008',text:'Transported alongside address 1008 on the memory trace into L1 Data Cache: the cache line returns word 42.',value:'MEM[1008] = 42',xy:[81,60],path:['alu-dcache'],bits:'0000000000101010'},
-    {unit:'writeback',title:'Loaded word enters the writeback trace',text:'Riding beside the loaded value 42 onto the Writeback Bus toward destination R4.',value:'load bus = 42',xy:[75,82],path:['dcache-writeback'],bits:'0000000000101010'},
-    {unit:'regs',title:'R4 receives the loaded word',text:'Following the writeback trace back to the Register File: R4 commits value 42.',value:'R4 ← 42',xy:[80,20],path:['writeback-regs'],bits:'0000000000101010'}]},
+    {unit:'pc',title:'Program counter outputs fetch address',text:'The Program Counter drives instruction address 0x0044 onto the fetch bus to initiate the load-word instruction.',value:'PC = 0x0044',xy:[11,20],path:[],bits:'0000000001000100'},
+    {unit:'icache',title:'L1 instruction cache fetches LW word',text:'L1 Instruction Cache reads address 0x0044 and returns the fixed-width 32-bit LW instruction encoding (0x0080A203).',value:'0x0080A203',xy:[30,20],path:['pc-icache'],bits:'00000000100000001010001000000011'},
+    {unit:'decoder',title:'Decoder extracts base register and offset',text:'The Control Decoder extracts base register R1, destination register R4, and sign-extends the 12-bit immediate offset (+8).',value:'base=R1 · imm=8',xy:[53,20],path:['icache-decode'],bits:'000010000001010001000001'},
+    {unit:'regs',title:'Register file outputs base address',text:'Read port A accesses register R1 and outputs base memory pointer 1000 onto the operand bus.',value:'R1 = 1000',xy:[80,20],path:['decode-regs'],bits:'0000001111101000'},
+    {unit:'alu',title:'AGU/ALU computes effective address',text:'The ALU adds base address 1000 and sign-extended offset 8 to generate effective memory address 1008.',value:'EA = 1000 + 8 = 1008',xy:[54,60],path:['regs-alu','decode-alu'],bits:'0000001111110000'},
+    {unit:'dcache',title:'L1 data cache reads word at 1008',text:'L1 Data Cache accesses address 1008 and outputs the 32-bit data word (42) onto the memory read bus.',value:'MEM[1008] = 42',xy:[81,60],path:['alu-dcache'],bits:'0000000000101010'},
+    {unit:'writeback',title:'Writeback multiplexer selects memory word',text:'The Writeback stage routes loaded memory word 42 onto the register writeback bus targeting R4.',value:'load bus = 42',xy:[75,82],path:['dcache-writeback'],bits:'0000000000101010'},
+    {unit:'regs',title:'Register R4 commits loaded word',text:'The Register File latches loaded value 42 into destination register R4 on the clock edge.',value:'R4 ← 42',xy:[80,20],path:['writeback-regs'],bits:'0000000000101010'}]},
   store:{asm:'SW R2, 12(R1)',label:'Store to memory',steps:[
-    {unit:'pc',title:'Program counter presents the address',text:'PC places 0x0048 on the fetch trace to begin the store instruction.',value:'PC = 0x0048',xy:[11,20],path:[],bits:'0000000001001000'},
-    {unit:'icache',title:'Instruction cache fetches SW',text:'Riding beside the fetch trace into L1 I-Cache: the 32-bit store-word instruction is fetched.',value:'0x0020A623',xy:[30,20],path:['pc-icache'],bits:'00000000001000001010011000100011'},
-    {unit:'decoder',title:'Decoder reconstructs split immediate',text:'Inside the Control Decoder: the two split immediate fields are joined into offset +12 and MemWrite is prepared.',value:'base=R1 · src=R2 · off=12',xy:[53,20],path:['icache-decode'],bits:'000011000001001000100011'},
-    {unit:'regs',title:'Register file reads base and store data',text:'Traveling into the Register File: port A reads base R1=1000 while port B reads data value R2=12.',value:'R1=1000 · R2=12',xy:[80,20],path:['decode-regs'],bits:'000000111110100000001100'},
-    {unit:'alu',title:'ALU forms destination memory address',text:'Riding beside R1=1000 and offset 12 into the ALU: addition forms target memory address 1012.',value:'EA = 1000 + 12 = 1012',xy:[54,60],path:['regs-alu','decode-alu'],bits:'0000001111110100'},
-    {unit:'dcache',title:'Data cache writes R2 into MEM[1012]',text:'Transported beside address 1012 and data 12 into L1 Data Cache: MEM[1012] is updated to 12. Register writeback is skipped.',value:'MEM[1012] ← 12 (no WB)',xy:[81,60],path:['alu-dcache'],bits:'0000000000001100'}]},
+    {unit:'pc',title:'Program counter outputs fetch address',text:'The Program Counter drives 0x0048 onto the instruction fetch bus to start the store-word operation.',value:'PC = 0x0048',xy:[11,20],path:[],bits:'0000000001001000'},
+    {unit:'icache',title:'L1 instruction cache fetches SW word',text:'L1 Instruction Cache returns the 32-bit S-type store instruction word (0x0020A623).',value:'0x0020A623',xy:[30,20],path:['pc-icache'],bits:'00000000001000001010011000100011'},
+    {unit:'decoder',title:'Decoder reassembles split S-type immediate',text:'The Control Decoder combines the two split immediate fields into offset +12 and asserts the MemWrite control line.',value:'base=R1 · src=R2 · off=12',xy:[53,20],path:['icache-decode'],bits:'000011000001001000100011'},
+    {unit:'regs',title:'Register file reads base and store data',text:'Port A reads base pointer R1=1000 while port B simultaneously reads source data R2=12.',value:'R1=1000 · R2=12',xy:[80,20],path:['decode-regs'],bits:'000000111110100000001100'},
+    {unit:'alu',title:'ALU computes target memory address',text:'The ALU adds base pointer 1000 and offset 12 to form target byte address 1012.',value:'EA = 1000 + 12 = 1012',xy:[54,60],path:['regs-alu','decode-alu'],bits:'0000001111110100'},
+    {unit:'dcache',title:'L1 data cache writes R2 into MEM[1012]',text:'L1 Data Cache writes value 12 into address 1012; RegWrite remains deasserted because stores do not modify registers.',value:'MEM[1012] ← 12 (no WB)',xy:[81,60],path:['alu-dcache'],bits:'0000000000001100'}]},
   branch:{asm:'BEQ R1, R2, +16',label:'Conditional branch',steps:[
-    {unit:'pc',title:'Program counter presents branch address',text:'PC places branch address 0x0050 on the fetch trace.',value:'PC = 0x0050',xy:[11,20],path:[],bits:'0000000001010000'},
-    {unit:'icache',title:'Instruction cache fetches BEQ',text:'Riding beside the fetch trace into L1 I-Cache: the fixed-width BEQ encoding is returned.',value:'0x00208863',xy:[30,20],path:['pc-icache'],bits:'00000000001000001000100001100011'},
-    {unit:'decoder',title:'Decoder selects branch controls',text:'Inside the Control Decoder: opcode 1100011 enables equality comparison and extracts branch offset +16.',value:'branch · offset=+16',xy:[53,20],path:['icache-decode'],bits:'11000110001000010000'},
-    {unit:'regs',title:'Register file reads comparands',text:'Traveling alongside the register read traces: R1=12 and R2=12 are read in parallel.',value:'R1=12 · R2=12',xy:[80,20],path:['decode-regs'],bits:'0000110000001100'},
-    {unit:'alu',title:'ALU tests equality',text:'Riding beside comparands 12 and 12 into the ALU: subtraction yields 0, asserting the Zero flag (Z=1).',value:'12 − 12 = 0 · Z=1',xy:[54,60],path:['regs-alu','decode-alu'],bits:'0000000000000001'},
-    {unit:'branch',title:'Branch unit computes target address',text:'Transported beside the Zero flag into the Branch Unit: offset +16 is added to 0x0050 to form target 0x0060.',value:'target = 0x0060',xy:[22,62],path:['alu-branch'],bits:'0000000001100000'},
-    {unit:'pc',title:'PC redirects instruction fetch',text:'Riding beside the branch redirect trace back to the Program Counter: PC latches 0x0060 without register writeback.',value:'PC ← 0x0060',xy:[11,20],path:['branch-pc'],bits:'0000000001100000'}]}
+    {unit:'pc',title:'Program counter outputs branch address',text:'The Program Counter drives 0x0050 onto the fetch bus to fetch the conditional branch instruction.',value:'PC = 0x0050',xy:[11,20],path:[],bits:'0000000001010000'},
+    {unit:'icache',title:'L1 instruction cache returns BEQ word',text:'L1 Instruction Cache outputs the 32-bit B-type branch encoding (0x00208863).',value:'0x00208863',xy:[30,20],path:['pc-icache'],bits:'00000000001000001000100001100011'},
+    {unit:'decoder',title:'Decoder extracts branch offset and controls',text:'The Control Decoder decodes opcode 1100011, enables equality comparison, and sign-extends branch offset +16.',value:'branch · offset=+16',xy:[53,20],path:['icache-decode'],bits:'11000110001000010000'},
+    {unit:'regs',title:'Register file outputs both comparands',text:'Both register read ports access R1=12 and R2=12 in parallel and drive them to the comparator/ALU.',value:'R1=12 · R2=12',xy:[80,20],path:['decode-regs'],bits:'0000110000001100'},
+    {unit:'alu',title:'ALU evaluates equality condition',text:'The ALU subtracts R2 from R1 (12 − 12 = 0) and asserts the Zero condition flag (Z=1).',value:'12 − 12 = 0 · Z=1',xy:[54,60],path:['regs-alu','decode-alu'],bits:'0000000000000001'},
+    {unit:'branch',title:'Branch unit computes target PC',text:'With Z=1 asserted, the Branch Unit adds PC-relative offset +16 to 0x0050 to produce branch target 0x0060.',value:'target = 0x0060',xy:[22,62],path:['alu-branch'],bits:'0000000001100000'},
+    {unit:'pc',title:'Program counter latches branch target',text:'The PC multiplexer selects branch target 0x0060, redirecting instruction fetch on the next clock edge.',value:'PC ← 0x0060',xy:[11,20],path:['branch-pc'],bits:'0000000001100000'}]}
 };
 const CISC_CORE_PROGRAMS={
   mov:{asm:'MOV EAX, [0x1000]',label:'Memory-to-register move',steps:[
-    {unit:'front',title:'Front end fetches a 16-byte window',text:'EIP selects a stream of raw instruction bytes. Variable instruction length means boundaries are not yet known.',value:'bytes = A1 00 10 00 00',xy:[9,20],path:[],bits:'10100001000000000001000000000000'},
-    {unit:'length',title:'Length decoder identifies five bytes',text:'Riding beside the byte stream into the Length Decoder: opcode A1 plus a 32-bit address marks a 5-byte boundary.',value:'length = 5 bytes',xy:[28,20],path:['c-front-length'],bits:'0000000000000101'},
-    {unit:'decodec',title:'Complex decoder cracks MOV',text:'Traveling alongside the 5 instruction bytes into the Complex Decoder: opcode A1 and address 0x1000 are decoded.',value:'MOV · dst=EAX · [0x1000]',xy:[47,20],path:['c-length-decode'],bits:'1010000100010000'},
-    {unit:'queue',title:'Decoder emits internal micro-ops',text:'Riding beside the decoded micro-operation trace into the µOp Queue: AGU, LOAD, and REG-WRITE µops are buffered.',value:'AGU → LOAD → WRITE',xy:[88,20],path:['c-decode-queue'],bits:'0001001001110001'},
-    {unit:'rename',title:'EAX is renamed to physical register P37',text:'Transported beside the µops into the Register Renamer: architectural EAX maps to physical register P37.',value:'EAX → P37',xy:[24,62],path:['c-queue-sched','c-retire-rename'],bits:'0000000000100101'},
-    {unit:'sched',title:'Scheduler dispatches ready load µop',text:'Inside the Out-of-Order Scheduler: operands are ready, so the load micro-op issues along the dispatch trace.',value:'µop ready · issue LSU',xy:[49,62],path:['c-rename-sched'],bits:'0000000000000001'},
-    {unit:'lsu',title:'Load/store engine reads memory',text:'Riding beside address 0x1000 into the Load/Store Unit & L1 Data Cache: memory returns 32-bit value 42.',value:'MEM[0x1000] = 42',xy:[90,62],path:['c-sched-exec','c-exec-lsu'],bits:'0000000000101010'},
-    {unit:'retire',title:'Reorder buffer retires EAX in order',text:'Traveling beside result 42 into the Reorder Buffer: architectural EAX commits 42 and EIP advances by 5 bytes.',value:'EAX ← 42 · EIP + 5',xy:[76,84],path:['c-lsu-retire'],bits:'0000000000101010'}]},
+    {unit:'front',title:'Byte front end fetches 16-byte window',text:'The x86 front end fetches an aligned 16-byte instruction window from L1 I-Cache; variable instruction lengths require pre-decode boundary scan.',value:'bytes = A1 00 10 00 00',xy:[9,20],path:[],bits:'10100001000000000001000000000000'},
+    {unit:'length',title:'Length decoder marks 5-byte instruction',text:'The Length Decoder scans opcode A1 plus its 32-bit direct displacement and isolates a 5-byte instruction boundary.',value:'length = 5 bytes',xy:[28,20],path:['c-front-length'],bits:'0000000000000101'},
+    {unit:'decodec',title:'Complex decoder translates MOV opcode',text:'The Complex Decoder cracks opcode A1 and immediate address 0x1000 into internal load and register-write operations.',value:'MOV · dst=EAX · [0x1000]',xy:[47,20],path:['c-length-decode'],bits:'1010000100010000'},
+    {unit:'queue',title:'Decoded micro-ops enter µOp queue',text:'The internal RISC-like micro-operations (AGU, LOAD, REG-WRITE) are buffered in the allocation queue.',value:'AGU → LOAD → WRITE',xy:[88,20],path:['c-decode-queue'],bits:'0001001001110001'},
+    {unit:'rename',title:'RAT renames EAX to physical register P37',text:'The Register Alias Table maps architectural destination EAX to physical register P37 to eliminate false write-after-write hazards.',value:'EAX → P37',xy:[24,62],path:['c-queue-sched','c-retire-rename'],bits:'0000000000100101'},
+    {unit:'sched',title:'Out-of-order scheduler dispatches load µop',text:'The Reservation Station detects that address operands are ready and dispatches the load micro-op to the Load/Store Unit.',value:'µop ready · issue LSU',xy:[49,62],path:['c-rename-sched'],bits:'0000000000000001'},
+    {unit:'lsu',title:'Load/store engine reads MEM[0x1000]',text:'The Load/Store Unit computes address 0x1000, queries L1 Data Cache, and retrieves 32-bit value 42.',value:'MEM[0x1000] = 42',xy:[90,62],path:['c-sched-exec','c-exec-lsu'],bits:'0000000000101010'},
+    {unit:'retire',title:'Reorder buffer commits EAX in order',text:'The Reorder Buffer retires the instruction in program order, committing 42 to architectural EAX and advancing EIP by 5 bytes.',value:'EAX ← 42 · EIP + 5',xy:[76,84],path:['c-lsu-retire'],bits:'0000000000101010'}]},
   addm:{asm:'ADD EAX, [0x1004]',label:'Arithmetic with memory',steps:[
-    {unit:'front',title:'Fetch window enters the front end',text:'The byte front end fetches opcode 03, ModR/M byte 05, and 4 displacement bytes from the instruction stream.',value:'03 05 FE 0F 00 00',xy:[9,20],path:[],bits:'00000011000001011111111000001111'},
-    {unit:'length',title:'Length decoder measures six bytes',text:'Riding beside the raw bytes into the Length Decoder: ModR/M decoding detects a 32-bit displacement (6 bytes total).',value:'length = 6 bytes',xy:[28,20],path:['c-front-length'],bits:'0000000000000110'},
-    {unit:'decodec',title:'Complex decoder expands memory ADD',text:'Inside the Complex Decoder: one CISC ADD with a memory operand splits into load, add, flags, and commit micro-operations.',value:'5 decoded µops',xy:[47,20],path:['c-length-decode'],bits:'0000000000000101'},
-    {unit:'queue',title:'Micro-ops enter the µop queue',text:'Traveling beside the internal µop stream into the Micro-op Queue.',value:'AGU · LD · ADD · FLAGS · WB',xy:[88,20],path:['c-decode-queue'],bits:'0001001010110111'},
-    {unit:'rename',title:'Destination EAX and flags are renamed',text:'Riding beside the µops into the Register Alias Table: EAX maps to P38 and EFLAGS maps to P9.',value:'EAX→P38 · FLAGS→P9',xy:[24,62],path:['c-queue-sched','c-retire-rename'],bits:'0010011000001001'},
-    {unit:'sched',title:'Scheduler tracks load-to-add dependency',text:'Inside the Out-of-Order Scheduler: the load µop issues immediately while the ADD µop waits for memory data.',value:'LOAD issues → ADD waits',xy:[49,62],path:['c-rename-sched'],bits:'0000000000000010'},
-    {unit:'lsu',title:'Load/store engine fetches operand 8',text:'Riding beside address 0x1004 into the Load/Store Unit: L1 Data Cache returns memory operand 8.',value:'MEM[0x1004] = 8',xy:[90,62],path:['c-sched-exec','c-exec-lsu'],bits:'0000000000001000'},
-    {unit:'exec',title:'Integer cluster adds 42 + 8 and sets flags',text:'Transported beside operand 8 on the forwarding trace to the Integer ALU Cluster: 42 + 8 produces 50 and updates EFLAGS.',value:'42 + 8 = 50 · ZF=0',xy:[70,62],path:['c-lsu-exec'],bits:'0000000000110010'},
-    {unit:'retire',title:'Reorder buffer commits EAX and EFLAGS',text:'Riding beside result 50 into the Reorder Buffer: the single architectural ADD retires in order.',value:'EAX ← 50 · EIP + 6',xy:[76,84],path:['c-exec-retire'],bits:'0000000000110010'}]},
+    {unit:'front',title:'Byte front end fetches instruction stream',text:'The front end fetches opcode 03, ModR/M byte 05, and 4 displacement bytes from the instruction byte stream.',value:'03 05 FE 0F 00 00',xy:[9,20],path:[],bits:'00000011000001011111111000001111'},
+    {unit:'length',title:'Length decoder detects 6-byte encoding',text:'ModR/M inspection identifies a 32-bit displacement following the opcode, marking a 6-byte instruction length.',value:'length = 6 bytes',xy:[28,20],path:['c-front-length'],bits:'0000000000000110'},
+    {unit:'decodec',title:'Complex decoder cracks fused memory-ADD',text:'One architectural CISC ADD with a memory operand is cracked into separate memory-load, integer-add, and flag-update micro-operations.',value:'5 decoded µops',xy:[47,20],path:['c-length-decode'],bits:'0000000000000101'},
+    {unit:'queue',title:'Micro-op queue buffers cracked sequence',text:'The Micro-op Queue buffers the AGU, LOAD, ADD, FLAGS, and WB micro-operations for allocation.',value:'AGU · LD · ADD · FLAGS · WB',xy:[88,20],path:['c-decode-queue'],bits:'0001001010110111'},
+    {unit:'rename',title:'RAT renames EAX and EFLAGS registers',text:'The Register Alias Table maps architectural EAX to physical register P38 and EFLAGS to physical flags register P9.',value:'EAX→P38 · FLAGS→P9',xy:[24,62],path:['c-queue-sched','c-retire-rename'],bits:'0010011000001001'},
+    {unit:'sched',title:'Scheduler enforces load-to-add dependency',text:'The Out-of-Order Scheduler dispatches the memory load immediately while holding the dependent ADD micro-op until data arrives.',value:'LOAD issues → ADD waits',xy:[49,62],path:['c-rename-sched'],bits:'0000000000000010'},
+    {unit:'lsu',title:'Load/store engine reads MEM[0x1004]',text:'The Load/Store Unit accesses L1 Data Cache at address 0x1004 and forwards memory operand 8 to the execution cluster.',value:'MEM[0x1004] = 8',xy:[90,62],path:['c-sched-exec','c-exec-lsu'],bits:'0000000000001000'},
+    {unit:'exec',title:'Integer ALU adds 42 + 8 and updates EFLAGS',text:'The Integer ALU adds EAX (42) and memory operand (8) to produce 50 while updating arithmetic status flags (ZF, SF, CF, OF).',value:'42 + 8 = 50 · ZF=0',xy:[70,62],path:['c-lsu-exec'],bits:'0000000000110010'},
+    {unit:'retire',title:'Reorder buffer retires EAX and EFLAGS',text:'The Reorder Buffer commits both EAX=50 and EFLAGS atomically in program order and advances EIP by 6 bytes.',value:'EAX ← 50 · EIP + 6',xy:[76,84],path:['c-exec-retire'],bits:'0000000000110010'}]},
   rep:{asm:'REP MOVSD',label:'Microcoded memory loop',steps:[
-    {unit:'front',title:'Front end fetches prefix and opcode',text:'The front end reads prefix byte F3 (REP) and string opcode A5 (MOVSD).',value:'F3 A5',xy:[9,20],path:[],bits:'1111001110100101'},
-    {unit:'length',title:'Length decoder marks a 2-byte boundary',text:'Riding beside the byte stream into the Length Decoder: just two instruction bytes encode an entire counted loop.',value:'length = 2 bytes',xy:[28,20],path:['c-front-length'],bits:'0000000000000010'},
-    {unit:'decodec',title:'Decoder routes complex string op to microcode',text:'Inside the Complex Decoder: REP MOVSD requires repeated memory transfers and is steered to the Microcode ROM.',value:'complex = 1 → µROM',xy:[47,20],path:['c-length-decode'],bits:'0000000000000001'},
-    {unit:'ucode',title:'Microcode ROM streams loop micro-ops',text:'Traveling beside the microcode sequencer trace into µCode ROM: load [ESI], store [EDI], pointer-advance, and ECX-decrement µops are emitted.',value:'µPC → string-copy loop',xy:[68,20],path:['c-decode-ucode'],bits:'1010110000111001'},
-    {unit:'queue',title:'Micro-op queue buffers the loop sequence',text:'Riding beside the generated µop stream into the Micro-op Queue.',value:'LD · ST · INC · DEC · JNZ',xy:[88,20],path:['c-ucode-queue'],bits:'0001101011010111'},
-    {unit:'rename',title:'Loop pointers ESI, EDI, ECX are mapped',text:'Transported beside the loop µops through Register Renaming so speculative iterations track physical state cleanly.',value:'ESI/EDI/ECX renamed',xy:[24,62],path:['c-queue-sched','c-retire-rename'],bits:'0001010000101000'},
-    {unit:'sched',title:'Scheduler dispatches repeated transfers',text:'Inside the Out-of-Order Scheduler: memory read/write pairs and pointer updates issue across four iterations.',value:'4 loop iterations issued',xy:[49,62],path:['c-rename-sched'],bits:'0000000000000100'},
-    {unit:'lsu',title:'Load/store engine copies four doublewords',text:'Riding beside the memory data traces in the Load/Store Unit: 4 reads from [ESI] and 4 writes to [EDI] move 16 bytes.',value:'4 × 4 B = 16 B copied',xy:[90,62],path:['c-sched-exec','c-exec-lsu'],bits:'0000000000010000'},
-    {unit:'exec',title:'Integer units advance ESI/EDI and zero ECX',text:'Traveling beside the index traces into the Integer Cluster: ESI and EDI advance by 16 while ECX reaches 0.',value:'ECX=0 · ESI+16 · EDI+16',xy:[70,62],path:['c-lsu-exec'],bits:'0000000000010000'},
-    {unit:'retire',title:'Reorder buffer retires completed REP MOVSD',text:'Riding beside the final state into the Reorder Buffer: all 16 bytes and updated pointers commit atomically.',value:'REP MOVSD retired',xy:[76,84],path:['c-exec-retire'],bits:'1111001110100101'}]},
+    {unit:'front',title:'Byte front end fetches prefix and opcode',text:'The byte front end reads repeat prefix F3 (REP) and string-move opcode A5 (MOVSD) from the instruction stream.',value:'F3 A5',xy:[9,20],path:[],bits:'1111001110100101'},
+    {unit:'length',title:'Length decoder marks 2-byte instruction',text:'The Length Decoder isolates the 2-byte prefixed instruction that encodes a complete block memory copy.',value:'length = 2 bytes',xy:[28,20],path:['c-front-length'],bits:'0000000000000010'},
+    {unit:'decodec',title:'Decoder traps complex op to Microcode ROM',text:'Because REP MOVSD requires multi-iteration pointer and counter updates, the Complex Decoder transfers control to the Microcode ROM sequencer.',value:'complex = 1 → µROM',xy:[47,20],path:['c-length-decode'],bits:'0000000000000001'},
+    {unit:'ucode',title:'Microcode ROM sequences string-copy µops',text:'The Microcode ROM sequencer emits the internal micro-op loop: load [ESI], store [EDI], increment pointers by 4, and decrement ECX.',value:'µPC → string-copy loop',xy:[68,20],path:['c-decode-ucode'],bits:'1010110000111001'},
+    {unit:'queue',title:'Micro-op queue buffers loop micro-ops',text:'The streamed micro-op sequence (LD, ST, INC, DEC, JNZ) is buffered in the Micro-op Queue.',value:'LD · ST · INC · DEC · JNZ',xy:[88,20],path:['c-ucode-queue'],bits:'0001101011010111'},
+    {unit:'rename',title:'RAT maps loop pointers ESI, EDI, and ECX',text:'Register Renaming assigns physical registers to each iteration of ESI, EDI, and ECX so speculative iterations can overlap.',value:'ESI/EDI/ECX renamed',xy:[24,62],path:['c-queue-sched','c-retire-rename'],bits:'0001010000101000'},
+    {unit:'sched',title:'Scheduler dispatches 4 copy iterations',text:'The Out-of-Order Scheduler dispatches the paired memory loads, stores, and pointer updates across four iterations.',value:'4 loop iterations issued',xy:[49,62],path:['c-rename-sched'],bits:'0000000000000100'},
+    {unit:'lsu',title:'Load/store engine transfers 16 bytes',text:'The Load/Store Unit executes four 32-bit reads from [ESI] and four 32-bit writes to [EDI], copying 16 bytes across L1 Data Cache.',value:'4 × 4 B = 16 B copied',xy:[90,62],path:['c-sched-exec','c-exec-lsu'],bits:'0000000000010000'},
+    {unit:'exec',title:'Integer cluster updates ESI, EDI, and ECX',text:'The Integer ALU Cluster increments ESI and EDI by 16 bytes and decrements loop counter ECX to 0.',value:'ECX=0 · ESI+16 · EDI+16',xy:[70,62],path:['c-lsu-exec'],bits:'0000000000010000'},
+    {unit:'retire',title:'Reorder buffer retires completed string copy',text:'The Reorder Buffer commits all 16 transferred bytes and the updated architectural registers (ESI, EDI, ECX=0).',value:'REP MOVSD retired',xy:[76,84],path:['c-exec-retire'],bits:'1111001110100101'}]},
   push:{asm:'PUSH EAX',label:'Implicit stack operation',steps:[
-    {unit:'front',title:'Front end fetches 1-byte opcode',text:'EIP fetches single-byte opcode 0x50 from the instruction stream.',value:'byte = 50',xy:[9,20],path:[],bits:'0101000000000000'},
-    {unit:'length',title:'Length decoder detects 1-byte command',text:'Riding beside byte 0x50 into the Length Decoder: the instruction boundary is immediately 1 byte.',value:'length = 1 byte',xy:[28,20],path:['c-front-length'],bits:'0000000000000001'},
-    {unit:'decodec',title:'Decoder exposes implicit stack pointer ESP',text:'Inside the Complex Decoder: opcode 50 implicitly references stack pointer ESP, decrement 4, and source EAX.',value:'ESP − 4 · store EAX',xy:[47,20],path:['c-length-decode'],bits:'0101000000000100'},
-    {unit:'queue',title:'Micro-ops enter the queue',text:'Traveling beside the decoded µops into the Micro-op Queue: stack-decrement and memory-store operations are queued.',value:'SUB ESP,4 → STORE [ESP]',xy:[88,20],path:['c-decode-queue'],bits:'0001010001110010'},
-    {unit:'rename',title:'ESP is mapped to a new physical register',text:'Riding beside the stack µop into the Register Renamer: ESP receives a new physical register.',value:'ESP → P41',xy:[24,62],path:['c-queue-sched','c-retire-rename'],bits:'0000000000101001'},
-    {unit:'sched',title:'Scheduler issues stack address & store',text:'Inside the Scheduler: the ESP subtraction and store data micro-ops are dispatched.',value:'issue ALU + LSU',xy:[49,62],path:['c-rename-sched'],bits:'0000000000000011'},
-    {unit:'exec',title:'Integer unit decrements ESP by 4',text:'Riding beside ESP=0x8000 into the Integer Cluster: 0x8000 − 4 forms new stack top 0x7FFC.',value:'ESP = 0x7FFC',xy:[70,62],path:['c-sched-exec'],bits:'0111111111111100'},
-    {unit:'lsu',title:'Load/store unit writes EAX to stack memory',text:'Transported beside address 0x7FFC and EAX=50 into the Load/Store Unit: MEM[0x7FFC] receives 50.',value:'MEM[0x7FFC] ← 50',xy:[90,62],path:['c-exec-lsu'],bits:'0000000000110010'},
-    {unit:'retire',title:'Reorder buffer commits ESP and stack write',text:'Riding beside the commit signal into the Reorder Buffer: ESP=0x7FFC and the stack write become architecturally visible.',value:'ESP ← 0x7FFC · EIP + 1',xy:[76,84],path:['c-lsu-retire'],bits:'0111111111111100'}]}
+    {unit:'front',title:'Byte front end fetches 1-byte opcode',text:'The front end reads compact single-byte opcode 0x50 (PUSH EAX) from the instruction stream.',value:'byte = 50',xy:[9,20],path:[],bits:'0101000000000000'},
+    {unit:'length',title:'Length decoder marks 1-byte boundary',text:'The Length Decoder immediately marks a 1-byte instruction boundary for register push opcode 0x50.',value:'length = 1 byte',xy:[28,20],path:['c-front-length'],bits:'0000000000000001'},
+    {unit:'decodec',title:'Decoder expands implicit ESP stack access',text:'The Complex Decoder unpacks implicit stack pointer register ESP, stack decrement (−4), and source register EAX.',value:'ESP − 4 · store EAX',xy:[47,20],path:['c-length-decode'],bits:'0101000000000100'},
+    {unit:'queue',title:'Micro-op queue buffers stack decrement & store',text:'The pointer-decrement micro-op (SUB ESP, 4) and memory-store micro-op (STORE [ESP], EAX) enter the Micro-op Queue.',value:'SUB ESP,4 → STORE [ESP]',xy:[88,20],path:['c-decode-queue'],bits:'0001010001110010'},
+    {unit:'rename',title:'RAT maps stack pointer ESP to P41',text:'The Register Renamer maps updated stack pointer ESP to physical register P41.',value:'ESP → P41',xy:[24,62],path:['c-queue-sched','c-retire-rename'],bits:'0000000000101001'},
+    {unit:'sched',title:'Scheduler issues stack update and store',text:'The Out-of-Order Scheduler dispatches the ESP subtraction to the Integer ALU and the stack write to the Load/Store Unit.',value:'issue ALU + LSU',xy:[49,62],path:['c-rename-sched'],bits:'0000000000000011'},
+    {unit:'exec',title:'Integer ALU decrements ESP by 4 bytes',text:'The Integer ALU subtracts 4 from ESP (0x8000 − 4) to form new top-of-stack address 0x7FFC.',value:'ESP = 0x7FFC',xy:[70,62],path:['c-sched-exec'],bits:'0111111111111100'},
+    {unit:'lsu',title:'Load/store engine writes EAX to stack',text:'The Load/Store Unit writes EAX (50) into L1 Data Cache at new top-of-stack address MEM[0x7FFC].',value:'MEM[0x7FFC] ← 50',xy:[90,62],path:['c-exec-lsu'],bits:'0000000000110010'},
+    {unit:'retire',title:'Reorder buffer commits ESP and stack store',text:'The Reorder Buffer commits ESP=0x7FFC and the stack memory write in program order, advancing EIP by 1 byte.',value:'ESP ← 0x7FFC · EIP + 1',xy:[76,84],path:['c-lsu-retire'],bits:'0111111111111100'}]}
 };
 const CORE_PROGRAMS={risc:RISC_CORE_PROGRAMS,cisc:CISC_CORE_PROGRAMS};
 let coreArch='risc',coreInstruction='add',coreStepIndex=0,coreTimer=null,coreCycle=0,coreYaw=-28,corePitch=57;
@@ -393,14 +393,14 @@ renderCoreInstructionButtons();renderCore();
 // silicon buses WITH the moving data packets through every stage.
 // ============================================================================
 const JOURNEY_UNITS={
-  outside:['ELECTRONICS TEST BENCH','LAB','TEST BENCH','BETWEEN HANDS'],
-  bench:['BUS CONTROLLER IC','CTRL','SIGNAL ENTRY','COMMAND PULSE'],
-  board:['MOTHERBOARD COPPER TRACES','PCB','TRACE TRANSPORT','BUS DATA STREAM'],
-  package:['CPU SOCKET & PACKAGE','PKG','PACKAGE ENTRY','ELECTRICAL BUS'],
-  pins:['GOLD CONTACT CORRIDOR','PINS','PIN TRANSPORT','PIN SIGNALS'],
-  substrate:['SUBSTRATE & COPPER VIAS','VIAS','VIA DESCENT','MICRO-BUMP DATA'],
-  die:['SILICON DIE INTERCONNECT','DIE','ON-DIE ENTRY','DIE DATA PACKET'],
-  exit:['SYSTEM RESULT BUS','OUT','RETIRE & EXIT','ARCHITECTURAL RESULT'],
+  outside:['ELECTRONICS TEST BENCH','LAB','TEST BENCH','COMMAND QUEUED'],
+  bench:['BUS CONTROLLER IC','CTRL','SIGNAL SERIALIZATION','DIFFERENTIAL BUS'],
+  board:['MOTHERBOARD COPPER TRACES','PCB','PCB PROPAGATION','4-LANE BUS STREAM'],
+  package:['CPU SOCKET & PACKAGE','PKG','PACKAGE ENTRY','LGA SOCKET BUS'],
+  pins:['GOLD LGA CONTACTS','PINS','CONTACT INTERFACE','PIN SIGNALS'],
+  substrate:['SUBSTRATE & COPPER VIAS','VIAS','TSV & C4 INTERCONNECT','MICRO-BUMP DATA'],
+  die:['SILICON DIE INTERCONNECT','DIE','ON-DIE M1/M2 BUS','DIE DATA PACKET'],
+  exit:['SYSTEM RESULT BUS','OUT','RETIRE & COMMIT','ARCHITECTURAL RESULT'],
   pc:['PROGRAM COUNTER','PC','FETCH STAGE','INSTRUCTION ADDRESS'],
   icache:['L1 INSTRUCTION CACHE','I$','FETCH STAGE','INSTRUCTION BYTES'],
   decoder:['CONTROL DECODER','DEC','DECODE STAGE','DECODED FIELDS'],
@@ -484,27 +484,27 @@ function getStage3DCoords(step,idx,route){
   }
   if(step.scene==='pins'){
     return {
-      cam:[-68,38,-105],
-      look:[0,16,0],
-      traceFrom:[0,6,-38],
-      traceTo:[0,24,-6]
+      cam:[-52,42,-82],
+      look:[0,23,0],
+      traceFrom:[0,19,-38],
+      traceTo:[0,28,-6]
     };
   }
   if(step.scene==='substrate'){
     return {
-      cam:[-82,-16,-118],
-      look:[0,-62,0],
-      traceFrom:[0,-8,-8],
-      traceTo:[0,-112,-8]
+      cam:[-95,-22,-310],
+      look:[-30,-82,-180],
+      traceFrom:[-54,-22,-190],
+      traceTo:[-54,-114,-190]
     };
   }
   if(step.scene==='die'){
-    const firstUnit=layout[route[7]?.unit]||[-220,-125,85,34,64];
+    const firstUnit=layout[route[7]?.unit]||[-235,-125,88,36,66];
     return {
       cam:[-85,12,-335],
       look:[0,-115,5],
-      traceFrom:[0,-112,-35],
-      traceTo:[firstUnit[0],-114,firstUnit[1]]
+      traceFrom:[firstUnit[0],-118.4,-198],
+      traceTo:[firstUnit[0],-118.4,firstUnit[1]-32]
     };
   }
   if(step.scene==='exit'){
@@ -541,7 +541,8 @@ function getStage3DCoords(step,idx,route){
 let journeyIndex=0,journeyAutoTimer=null,journeySoundOn=false,journeyAudio=null,journeyTraveling=false;
 let jAnimFrame=null,jCamPos=[-45,255,-560],jCamLook=[0,62,-130];
 let jTargetCam=[-45,255,-560],jTargetLook=[0,62,-130];
-let jUserYaw=0,jUserPitch=0;
+let jStartCam=[-45,255,-560],jStartLook=[0,62,-130],jTransStartTime=0,jTransDur=680;
+let jPrevScene='outside',jUserYaw=0,jUserPitch=0,jPkgAlpha=0.96;
 
 function journeyProgram(){return coreProgram()}
 function createJourneyParticles(){
@@ -567,31 +568,39 @@ function journeyTone(frequency=240,duration=.16){
 function journeyRoute(){
   const program=journeyProgram(),seed=(program.steps[0]?.bits||'1011010011010010').padStart(32,'0');
   const prelude=[
-    {unit:'outside',scene:'outside',route:'Lab Bench',title:'Standing at the electronics test bench',text:`You stand directly between the resting hands at the hardware test bench, looking straight across the controller pad, oscilloscope, power supply, and motherboard as ${program.asm} is queued.`,value:`Queued · ${program.asm}`,bits:seed},
-    {unit:'bench',scene:'bench',route:'Controller',title:'Move between the hands into the controller IC',text:`Moving forward between the resting hands, you enter the bus controller IC as the software command ${program.asm} becomes a live electrical bit stream.`,value:`Controller · ${program.asm}`,bits:seed},
-    {unit:'board',scene:'board',route:'PCB Traces',title:'Transported beside the copper motherboard traces',text:'You shrink to board scale and ride right beside the glowing copper bus traces with the binary data packets as they race across the PCB from the controller toward the CPU socket.',value:`Bus trace · ${program.asm}`,bits:seed},
-    {unit:'package',scene:'package',route:'CPU Package',title:'Enter the CPU socket and processor package',text:`Still traveling beside the copper trace, you reach the CPU socket and pass beneath the metallic heatspreader (${coreArch==='cisc'?'EDU-C86':'EDU-R32'}) that protects the silicon die inside.`,value:`Package · ${coreArch==='cisc'?'EDU-C86':'EDU-R32'}`,bits:seed},
-    {unit:'pins',scene:'pins',route:'Contacts',title:'Ride beside the gold processor contacts',text:'You travel alongside the electrical signal up the gold package pins and contacts that carry power, clock edges, addresses, data, and control into the processor.',value:'Contacts · ADDR / DATA / CLK',bits:seed},
-    {unit:'substrate',scene:'substrate',route:'Copper Vias',title:'Descend beside copper vias and micro-bumps',text:'Inside the multi-layer package substrate, you ride beside the copper redistribution traces and plunge down vertical copper vias and C4 die bumps onto the silicon.',value:'Via link · Substrate → Silicon',bits:seed},
-    {unit:'die',scene:'die',route:'Silicon Die',title:'Arrive beside the on-die silicon interconnects',text:`You land directly beside the microscopic metal interconnect traces on the ${coreArch.toUpperCase()} silicon die. Ahead lie all the functional blocks that will process ${program.asm}.`,value:`On-die bus · ${program.asm}`,bits:seed}
+    {unit:'outside',scene:'outside',route:'Lab Bench',title:'Hardware controller queues instruction',text:`The 12-switch hardware controller encodes ${program.asm} into a 32-bit binary command frame while the bench oscilloscope monitors the system clock and bus voltage.`,value:`Queued · ${program.asm}`,bits:seed},
+    {unit:'bench',scene:'bench',route:'Controller',title:'Bus controller IC serializes bit stream',text:`The QFP bus controller IC latches ${program.asm} and drives high-speed differential voltage pulses onto the motherboard copper bus lines.`,value:`Controller · ${program.asm}`,bits:seed},
+    {unit:'board',scene:'board',route:'PCB Traces',title:'4-lane differential bus crosses motherboard',text:'Etched copper transmission lines carry the binary address, opcode, and control signals across the FR-4 motherboard PCB toward the CPU socket.',value:`Bus trace · ${program.asm}`,bits:seed},
+    {unit:'package',scene:'package',route:'CPU Package',title:'Signals enter CPU socket and package',text:`The motherboard bus reaches the LGA processor socket beneath the nickel-plated integrated heatspreader (${coreArch==='cisc'?'EDU-C86':'EDU-R32'}) and multi-layer package substrate.`,value:`Package · ${coreArch==='cisc'?'EDU-C86':'EDU-R32'}`,bits:seed},
+    {unit:'pins',scene:'pins',route:'Contacts',title:'Gold LGA contacts conduct bus signals',text:'Gold-plated socket contact pins transfer regulated VDD power, synchronous clock edges, addresses, and instruction bits into the processor package.',value:'Contacts · ADDR / DATA / CLK',bits:seed},
+    {unit:'substrate',scene:'substrate',route:'Copper Vias',title:'Vertical TSV vias & C4 micro-bumps',text:'Multi-layer ABF copper redistribution planes route signals down vertical through-substrate vias (TSVs) and C4 flip-chip solder bumps onto the silicon die.',value:'Via link · Substrate → Silicon',bits:seed},
+    {unit:'die',scene:'die',route:'Silicon Die',title:'On-die M1/M2 metal interconnect grid',text:`Signals arrive at the ${coreArch.toUpperCase()} silicon wafer perimeter bond pads and enter the on-die metal interconnect bus feeding the functional macro blocks for ${program.asm}.`,value:`On-die bus · ${program.asm}`,bits:seed}
   ];
   const internal=program.steps.map(step=>({...step,scene:'internal',route:JOURNEY_UNITS[step.unit]?.[1]||'CORE'}));
   const last=program.steps[program.steps.length-1];
   return [
     ...prelude,
     ...internal,
-    {unit:'exit',scene:'exit',route:'Result Bus',title:'Exit beside the system result bus',text:`The ${coreArch.toUpperCase()} processor has finished executing ${program.asm}. You ride beside the final architectural result as it exits onto the system bus.`,value:`Completed · ${last.value}`,bits:last.bits}
+    {unit:'exit',scene:'exit',route:'Result Bus',title:'Architectural state committed to system bus',text:`The ${coreArch.toUpperCase()} datapath has completed ${program.asm}. The final architectural result (${last.value}) is committed and driven onto the system result bus.`,value:`Completed · ${last.value}`,bits:last.bits}
   ];
 }
 
 function updateJourneyTargets(instant=false){
   const route=journeyRoute(),step=route[journeyIndex];
   const coords=getStage3DCoords(step,journeyIndex,route);
+  jStartCam=[...jCamPos];
+  jStartLook=[...jCamLook];
   jTargetCam=coords.cam;
   jTargetLook=coords.look;
+  jTransStartTime=performance.now();
   if(instant){
     jCamPos=[...jTargetCam];
     jCamLook=[...jTargetLook];
+    jStartCam=[...jTargetCam];
+    jStartLook=[...jTargetLook];
+    jPrevScene=step.scene;
+    jPkgAlpha=step.scene==='pins'?0.24:0.96;
+    jTransStartTime=0;
   }
 }
 
@@ -608,16 +617,17 @@ function renderJourney(){
   $('#journeyUnitType').textContent=meta[0];
   $('#journeySymbol').textContent=meta[1];
   $('#journeyTitle').textContent=step.title;
-  $('#journeyShort').textContent=step.text.split('. ')[0]+'.';
+  const firstSent=step.text.split('. ')[0];
+  $('#journeyShort').textContent=firstSent.endsWith('.')?firstSent:firstSent+'.';
   $('#journeyPayload').textContent=step.value;
   $('#journeyIndex').textContent=String(journeyIndex+1).padStart(2,'0');
   $('#journeyStage').textContent=`CHECKPOINT ${String(journeyIndex+1).padStart(2,'0')} · ${meta[2]}`;
   $('#journeyNarrationTitle').textContent=step.title;
   $('#journeyNarrationText').textContent=step.text;
   $('#journeyPacketState').textContent=meta[3];
-  $('#journeyVelocity').textContent=journeyTraveling?'14.4 units/cycle (TRACE TRANSPORT)':journeyIndex===last?'0.0 · RESULT COMMITTED':'1.0 units/cycle (ALONGSIDE DATA)';
-  $('#journeyPrevious').textContent=journeyIndex?(JOURNEY_UNITS[route[journeyIndex-1].unit]?.[0]||'Previous stage'):'Outside Test Bench';
-  $('#journeyNext').textContent=journeyIndex<last?(JOURNEY_UNITS[route[journeyIndex+1].unit]?.[0]||'Next stage'):'Journey Complete';
+  $('#journeyVelocity').textContent=journeyTraveling?'4.0 GT/s · BUS TRANSIT':journeyIndex===last?'COMMITTED · STATE LATCHED':'1.00 GHz · SYNC CLOCK';
+  $('#journeyPrevious').textContent=journeyIndex?(JOURNEY_UNITS[route[journeyIndex-1].unit]?.[0]||'Previous stage'):'Hardware Test Bench';
+  $('#journeyNext').textContent=journeyIndex<last?(JOURNEY_UNITS[route[journeyIndex+1].unit]?.[0]||'Next stage'):'Execution Complete';
   $('#journeyBack').disabled=journeyIndex===0;
   $('#journeyNextButton').disabled=journeyIndex===last;
   $('#journeyNextButton').innerHTML=journeyIndex===last?'Journey complete ✓':'Continue the route <b>→</b>';
@@ -625,7 +635,7 @@ function renderJourney(){
   $$('#journeyRouteMap .route-stop').forEach(el=>{
     el.onclick=()=>{
       const targetIdx=+el.dataset.stopIndex;
-      if(targetIdx!==journeyIndex&&!journeyTraveling){
+      if(targetIdx!==journeyIndex){
         jumpToJourneyIndex(targetIdx);
       }
     };
@@ -769,11 +779,15 @@ function startJourney3DLoop(){
     ctx.save();
     ctx.scale(dpr,dpr);
 
-    // Smooth camera interpolation along the route
-    const lerpRate=journeyTraveling?0.095:0.075;
+    // Smooth time-based cubic ease-in-out camera & look-target interpolation
+    const elapsed=Math.max(0,now-(jTransStartTime||now));
+    const rawT=jTransStartTime?Math.min(1,elapsed/jTransDur):1;
+    const easeT=rawT<0.5?4*rawT*rawT*rawT:1-Math.pow(-2*rawT+2,3)/2;
+    const horizDist=Math.hypot(jTargetCam[0]-jStartCam[0],jTargetCam[2]-jStartCam[2]);
+    const arcLift=Math.sin(rawT*Math.PI)*Math.min(16,horizDist*0.055);
     for(let i=0;i<3;i++){
-      jCamPos[i]+=(jTargetCam[i]-jCamPos[i])*lerpRate;
-      jCamLook[i]+=(jTargetLook[i]-jCamLook[i])*lerpRate;
+      jCamPos[i]=jStartCam[i]+(jTargetCam[i]-jStartCam[i])*easeT+(i===1?arcLift:0);
+      jCamLook[i]=jStartLook[i]+(jTargetLook[i]-jStartLook[i])*easeT;
     }
 
     const isCisc=coreArch==='cisc';
@@ -1103,7 +1117,7 @@ function startJourney3DLoop(){
     // ========================================================================
     // 1. MACRO LAYER: REALISTIC HARDWARE TEST BENCH, INSTRUMENTS, HANDS & PCB
     // ========================================================================
-    if(step.scene==='outside'||step.scene==='bench'||step.scene==='board'||step.scene==='package'){
+    if(step.scene==='outside'||step.scene==='bench'||step.scene==='board'||step.scene==='package'||step.scene==='pins'){
       // Dark ESD Anti-Static Workbench Mat with bevel border & grounding snap
       drawPoly3D([[-380,0,-340],[380,0,-340],[380,0,280],[-380,0,280]],'#0e1713','#284235',2);
       drawPoly3D([[-365,0.2,-325],[365,0.2,-325],[365,0.2,265],[-365,0.2,265]],'#13201a','#345c46',1.2);
@@ -1292,38 +1306,61 @@ function startJourney3DLoop(){
       }
 
       // ======================================================================
-      // PROPER REALISTIC SILICON PROCESSOR PACKAGE (EDU-R32 / EDU-C86)
+      // PROPER REALISTIC SILICON PROCESSOR PACKAGE & GOLD LGA SOCKET CONTACTS
       // Multi-layer ABF Substrate + SMD Capacitors + Stepped Nickel-Copper IHS
       // ======================================================================
-      drawBox3D(0,16,0,114,6,114,'#475569','#1e293b','#94a3b8',1.2,16.1);
+      drawBox3D(0,16,0,114,3.5,114,'#475569','#1e293b','#94a3b8',1.2,16.1);
       drawCylinder3D([62,19,-54],[62,19,58],2.2,2.2,'#cbd5e1','#f8fafc');
 
-      const pkgAlpha=(step.scene==='pins'||step.scene==='substrate')?0.24:0.96;
-      drawBox3D(0,22,0,96,4.5,96,
+      const targetPkgAlpha=step.scene==='pins'?0.24:0.96;
+      jPkgAlpha+=(targetPkgAlpha-jPkgAlpha)*0.14;
+      const pkgAlpha=Number(jPkgAlpha.toFixed(3));
+
+      // Depth-sorted 24 Gold LGA Contact Pins inside the socket (visible when package turns X-ray translucent!)
+      if(pkgAlpha<0.92||step.scene==='pins'){
+        const pinList=[];
+        for(let px=-36;px<=36;px+=18){
+          for(let pz=-36;pz<=36;pz+=18){
+            if(Math.abs(px)<8&&Math.abs(pz)<8)continue;
+            const dist=Math.hypot(px-camX,23-camY,pz-camZ);
+            pinList.push({px,pz,dist});
+          }
+        }
+        pinList.sort((a,b)=>b.dist-a.dist);
+        for(const {px,pz} of pinList){
+          drawBox3D(px,19.5,pz,5.5,1.0,5.5,'#eab308','#78350f','#fef08a',0.7);
+          drawCylinder3D([px,20,pz],[px,28.5,pz],2.1,1.8,'#eab308','#fef08a');
+        }
+        if(step.scene==='pins'){
+          drawTraceWithData([0,19.5,-44],[0,28,-6],true,true,'PIN SIGNAL · 1.2V',step.bits);
+        }
+      }
+
+      drawBox3D(0,28.5,0,96,4.2,96,
         isCisc?`rgba(16,64,92,${pkgAlpha})`:`rgba(16,78,48,${pkgAlpha})`,
         `rgba(8,36,24,${pkgAlpha})`,
         gold,1.3
       );
-      if(pkgAlpha>0.5){
+      if(pkgAlpha>0.55){
         for(let sc=-36;sc<=36;sc+=18){
-          drawBox3D(sc,26.5,-43,4.2,2.2,2.4,'#b45309','#78350f','#e2e8f0',0.7);
-          drawBox3D(sc,26.5,43,4.2,2.2,2.4,'#b45309','#78350f','#e2e8f0',0.7);
-          drawBox3D(-43,26.5,sc,2.4,2.2,4.2,'#b45309','#78350f','#e2e8f0',0.7);
-          drawBox3D(43,26.5,sc,2.4,2.2,4.2,'#b45309','#78350f','#e2e8f0',0.7);
+          drawBox3D(sc,32.7,-43,4.2,2.0,2.4,'#b45309','#78350f','#e2e8f0',0.7);
+          drawBox3D(sc,32.7,43,4.2,2.0,2.4,'#b45309','#78350f','#e2e8f0',0.7);
+          drawBox3D(-43,32.7,sc,2.4,2.0,4.2,'#b45309','#78350f','#e2e8f0',0.7);
+          drawBox3D(43,32.7,sc,2.4,2.0,4.2,'#b45309','#78350f','#e2e8f0',0.7);
         }
       }
-      drawBox3D(0,26.5,0,78,5.5,78,
+      drawBox3D(0,32.7,0,78,5.0,78,
         `rgba(180,192,204,${pkgAlpha})`,
         `rgba(100,114,128,${pkgAlpha})`,
         `rgba(226,232,240,${pkgAlpha})`,1.3
       );
-      drawBox3D(0,32,0,64,4.5,64,
+      drawBox3D(0,37.7,0,64,4.2,64,
         `rgba(212,222,232,${pkgAlpha})`,
         `rgba(125,138,152,${pkgAlpha})`,
         accent,1.5
       );
-      const ihsTop=project(0,37.2,0);
-      if(ihsTop&&ihsTop.z<560&&pkgAlpha>0.5){
+      const ihsTop=project(0,42.5,0);
+      if(ihsTop&&ihsTop.z<560&&pkgAlpha>0.55){
         ctx.save();
         ctx.textAlign='center';
         ctx.fillStyle='#0f172a';
@@ -1334,12 +1371,16 @@ function startJourney3DLoop(){
         ctx.fillText(isCisc?'x86 CISC SILICON':'RISC-V SILICON',ihsTop.x,ihsTop.y+6);
         ctx.restore();
       }
-      spatialPins.push({
-        pos:[0,44,0],
-        tag:'SILICON PROCESSOR PACKAGE',
-        label:isCisc?'EDU-C86 · NICKEL IHS & ABF SUBSTRATE':'EDU-R32 · NICKEL IHS & ABF SUBSTRATE',
-        hi:step.scene==='package'
-      });
+      if(step.scene==='pins'){
+        spatialPins.push({pos:[-18,26,-18],tag:'GOLD LGA CONTACTS',label:'VDD / CLK / ADDR / DATA PINS',hi:true});
+      }else{
+        spatialPins.push({
+          pos:[0,47,0],
+          tag:'SILICON PROCESSOR PACKAGE',
+          label:isCisc?'EDU-C86 · NICKEL IHS & ABF SUBSTRATE':'EDU-R32 · NICKEL IHS & ABF SUBSTRATE',
+          hi:step.scene==='package'
+        });
+      }
 
       // ----------------------------------------------------------------------
       // UNIFIED 3D WEBXR HAND + WRIST + ESD CUFF + FOREARM SLEEVE MESH
@@ -1418,6 +1459,8 @@ function startJourney3DLoop(){
             }
             tris.sort((a,b)=>b.z-a.z);
 
+            // Batch triangles by quantized RGB shade (~35 buckets instead of 5,800 draw calls) for 60fps transitions
+            const colorBuckets=new Map();
             for(const tr of tris){
               const ndotl=Math.max(0,tr.nx*lxKey+tr.ny*lyKey+tr.nz*lzKey);
               const rim=Math.max(0,1-Math.abs(tr.ny))*0.16;
@@ -1443,17 +1486,31 @@ function startJourney3DLoop(){
                 g=Math.min(255,Math.round(164*lit+spec*240));
                 b=Math.min(255,Math.round(128*lit+spec*225));
               }
-              const col=`rgb(${r},${g},${b})`;
+              const qr=(r>>2)<<2, qg=(g>>2)<<2, qb=(b>>2)<<2;
+              const col=`rgb(${qr},${qg},${qb})`;
+              let bucket=colorBuckets.get(col);
+              if(!bucket){
+                bucket=[];
+                colorBuckets.set(col,bucket);
+              }
+              bucket.push(tr);
+            }
+            for(const [col,bucket] of colorBuckets){
               handCacheCtx.fillStyle=col;
-              handCacheCtx.strokeStyle=col;
-              handCacheCtx.lineWidth=0.65;
               handCacheCtx.beginPath();
-              handCacheCtx.moveTo(tr.pa.x,tr.pa.y);
-              handCacheCtx.lineTo(tr.pb.x,tr.pb.y);
-              handCacheCtx.lineTo(tr.pc.x,tr.pc.y);
-              handCacheCtx.closePath();
+              for(let bIdx=0;bIdx<bucket.length;bIdx++){
+                const tr=bucket[bIdx];
+                const ax=tr.pa.x, ay=tr.pa.y, bx=tr.pb.x, by=tr.pb.y, cx=tr.pc.x, cy=tr.pc.y;
+                const mx=(ax+bx+cx)*0.3333, my=(ay+by+cy)*0.3333;
+                const dax=ax-mx, day=ay-my, la=Math.hypot(dax,day)||1;
+                const dbx=bx-mx, dby=by-my, lb=Math.hypot(dbx,dby)||1;
+                const dcx=cx-mx, dcy=cy-my, lc=Math.hypot(dcx,dcy)||1;
+                handCacheCtx.moveTo(ax+(dax/la)*0.42,ay+(day/la)*0.42);
+                handCacheCtx.lineTo(bx+(dbx/lb)*0.42,by+(dby/lb)*0.42);
+                handCacheCtx.lineTo(cx+(dcx/lc)*0.42,cy+(dcy/lc)*0.42);
+                handCacheCtx.closePath();
+              }
               handCacheCtx.fill();
-              handCacheCtx.stroke();
             }
           }
         }
@@ -1465,91 +1522,9 @@ function startJourney3DLoop(){
     }
 
     // ========================================================================
-    // 2A. PIN CORRIDOR LAYER (CHECKPOINT 05): DEPTH-SORTED GOLD LGA CONTACTS
+    // 2. MICRO LAYER: DEPTH-SORTED SILICON DIE FLOORPLAN, TSV VIAS & BUS TRACES
     // ========================================================================
-    if(step.scene==='pins'){
-      jPadSwitchRects=[];
-      // Motherboard PCB base & LGA Socket Housing frame beneath the pins
-      drawBox3D(0,-8,0,240,10,200,'#0a2e1c','#061c11','#1e5e3a',1.5);
-      drawBox3D(0,2,0,118,4,118,'#334155','#1e293b','#64748b',1.3);
-
-      // Collect and depth-sort all 24 Gold LGA Contact Pins back-to-front by distance from camera!
-      const pinList=[];
-      for(let px=-36;px<=36;px+=18){
-        for(let pz=-36;pz<=36;pz+=18){
-          if(Math.abs(px)<8&&Math.abs(pz)<8)continue;
-          const dist=Math.hypot(px-camX,14-camY,pz-camZ);
-          pinList.push({px,pz,dist});
-        }
-      }
-      pinList.sort((a,b)=>b.dist-a.dist);
-
-      for(const {px,pz} of pinList){
-        // Gold contact pad on socket base
-        drawBox3D(px,6,pz,6.5,1.2,6.5,'#eab308','#78350f','#fef08a',0.7);
-        // Smooth gold cylindrical pin shaft rising from socket (y=6) to package underside (y=25)
-        drawCylinder3D([px,6.5,pz],[px,25,pz],2.3,2.0,'#eab308','#fef08a');
-      }
-
-      // Active 4-lane bus trace feeding the central processor contact bus
-      drawTraceWithData([0,6,-52],[0,24,-6],true,true,'PIN SIGNAL · 1.2V',step.bits);
-
-      // Translucent X-Ray CPU Package Substrate & IHS resting ON TOP of the gold pins (drawn after pins!)
-      drawBox3D(0,25,0,102,4.5,102,
-        isCisc?'rgba(16,64,92,0.52)':'rgba(16,78,48,0.52)',
-        'rgba(8,36,24,0.45)',
-        gold,1.4
-      );
-      drawBox3D(0,29.5,0,82,5,82,'rgba(180,192,204,0.38)','rgba(100,114,128,0.34)',accent,1.2);
-      spatialPins.push({pos:[-18,20,-18],tag:'GOLD LGA CONTACTS',label:'VDD / CLK / ADDR / DATA PINS',hi:true});
-    }
-
-    // ========================================================================
-    // 2B. SUBSTRATE VIA LAYER (CHECKPOINT 06): DEPTH-SORTED TSV VIAS & C4 BUMPS
-    // ========================================================================
-    if(step.scene==='substrate'){
-      jPadSwitchRects=[];
-      // Silicon Die Top Landing Surface at bottom of substrate cutaway (y = -120)
-      drawBox3D(0,-126,0,220,6,180,'#09131c','#1e293b','#eab308',1.6);
-      for(let gx=-90;gx<=90;gx+=30){
-        drawLine3D([gx,-119.6,-75],[gx,-119.6,75],'rgba(234,179,8,0.18)',0.9);
-      }
-      for(let gz=-75;gz<=75;gz+=30){
-        drawLine3D([-95,-119.6,gz],[95,-119.6,gz],'rgba(56,189,248,0.14)',0.9);
-      }
-
-      // Multi-layer Copper Redistribution Planes (drawn bottom-to-top)
-      for(const ly of [-86,-52,-18]){
-        drawPoly3D([[-84,ly,-72],[84,ly,-72],[84,ly,72],[-84,ly,72]],'rgba(180,115,35,0.16)','rgba(245,158,11,0.55)',1.2);
-      }
-
-      // Collect and depth-sort all vertical Copper TSV Vias & C4 Micro-Bumps back-to-front!
-      const viaList=[];
-      for(let vx=-45;vx<=45;vx+=30){
-        for(let vz=-35;vz<=35;vz+=35){
-          const dist=Math.hypot(vx-camX,-58-camY,vz-camZ);
-          viaList.push({vx,vz,dist});
-        }
-      }
-      viaList.sort((a,b)=>b.dist-a.dist);
-
-      for(const {vx,vz} of viaList){
-        // C4 Flip-Chip Solder Micro-Bump on silicon die surface (y = -119..-114)
-        drawBox3D(vx,-119,vz,6.5,4.5,6.5,'#cbd5e1','#64748b','#f8fafc',0.9);
-        // Vertical Copper Through-Substrate Via (y = -114..0)
-        drawCylinder3D([vx,-114,vz],[vx,0,vz],2.1,2.1,'#d97706','#fbbf24');
-      }
-
-      drawTraceWithData([0,-4,-8],[0,-114,-8],true,true,'COPPER VIA → C4 BUMP',step.bits);
-      // Upper ABF Package Substrate Ceiling at y = 0..6
-      drawBox3D(0,0,0,176,5,150,'rgba(16,78,48,0.45)','rgba(8,36,24,0.42)',gold,1.3);
-      spatialPins.push({pos:[0,-48,0],tag:'PACKAGE SUBSTRATE',label:'COPPER VIAS & C4 FLIP-CHIP BUMPS',hi:true});
-    }
-
-    // ========================================================================
-    // 3. MICRO LAYER: DEPTH-SORTED SILICON DIE FLOORPLAN & ON-DIE BUS TRACES
-    // ========================================================================
-    if(step.scene==='die'||step.scene==='internal'||step.scene==='exit'){
+    if(step.scene==='substrate'||step.scene==='die'||step.scene==='internal'||step.scene==='exit'){
       jPadSwitchRects=[];
       const layout=DIE_LAYOUT_3D[coreArch];
       // 3.1 Metallic Silicon Wafer Die Bulk Substrate Slab (with thickness & bevel)
@@ -1599,7 +1574,7 @@ function startJourney3DLoop(){
         const sOff=sIdx===0?8:Math.min(42,dist*0.28);
         const eOff=Math.min(42,dist*0.28);
         const routeIdx=sIdx+7;
-        const isCurrentTrace=(journeyIndex===routeIdx);
+        const isCurrentTrace=(journeyIndex===routeIdx)||(sIdx===0&&step.scene==='die');
         const isDoneTrace=(journeyIndex>routeIdx);
         drawTraceWithData(
           [prevU[0]+nx*sOff,-118.4,prevU[1]+nz*sOff],
@@ -1682,12 +1657,38 @@ function startJourney3DLoop(){
           drawBox3D(sb.cx,topY,sb.cz,sb.w,sb.h,sb.d,sb.tCol,sb.sCol,sb.eCol,sb.lw);
         }
 
-        spatialPins.push({
-          pos:[ux,topY+8,uz],
-          tag:isCurrent?'ACTIVE SILICON MACRO':isVisited?'COMPLETED MACRO':'SILICON MACRO',
-          label:ulabel,
-          hi:isCurrent
-        });
+        if(step.scene!=='substrate'){
+          spatialPins.push({
+            pos:[ux,topY+8,uz],
+            tag:isCurrent?'ACTIVE SILICON MACRO':isVisited?'COMPLETED MACRO':'SILICON MACRO',
+            label:ulabel,
+            hi:isCurrent
+          });
+        }
+      }
+
+      // 3.55 Package Substrate Copper TSV Vias & C4 Micro-Bumps descending onto the north I/O edge of the Silicon Die
+      if(step.scene==='substrate'||(step.scene==='die'&&jPrevScene==='substrate'&&rawT<1)){
+        for(const ly of [-92,-62,-32]){
+          drawPoly3D([[-145,ly,-218],[65,ly,-218],[65,ly,-162],[-145,ly,-162]],'rgba(180,115,35,0.16)','rgba(245,158,11,0.55)',1.2);
+        }
+        const viaList=[];
+        for(let vx=-126;vx<=42;vx+=42){
+          for(let vz=-205;vz<=-175;vz+=30){
+            const dist=Math.hypot(vx-camX,-65-camY,vz-camZ);
+            viaList.push({vx,vz,dist});
+          }
+        }
+        viaList.sort((a,b)=>b.dist-a.dist);
+        for(const {vx,vz} of viaList){
+          drawBox3D(vx,-119,vz,6.5,4.5,6.5,'#cbd5e1','#64748b','#f8fafc',0.9);
+          drawCylinder3D([vx,-114,vz],[vx,-18,vz],2.1,2.1,'#d97706','#fbbf24');
+        }
+        drawTraceWithData([-54,-22,-190],[-54,-114,-190],step.scene==='substrate',step.scene==='die','COPPER VIA → C4 BUMP',step.bits);
+        drawBox3D(-40,-18,-190,218,5,64,'rgba(16,78,48,0.48)','rgba(8,36,24,0.42)',gold,1.3);
+        if(step.scene==='substrate'){
+          spatialPins.push({pos:[-42,-58,-190],tag:'PACKAGE SUBSTRATE',label:'COPPER VIAS & C4 FLIP-CHIP BUMPS',hi:true});
+        }
       }
 
       // 3.6 System Bus Exit Conduit (ONLY drawn during Checkpoint 15 'exit' so it never photobombs internal stages!)
@@ -1714,13 +1715,10 @@ function startJourney3DLoop(){
     let packetBannerPos=null;
     if(curCoords.traceFrom&&curCoords.traceTo&&step.scene!=='outside'){
       const tf=curCoords.traceFrom, tt=curCoords.traceTo;
-      const uSync=0.52+Math.sin(t*2.6)*0.16;
-      const dpx=tf[0]+(tt[0]-tf[0])*uSync;
-      const dpy=tf[1]+(tt[1]-tf[1])*uSync+1.6;
-      const dpz=tf[2]+(tt[2]-tf[2])*uSync;
-      // Sleek 4-lane synchronized bus packet latch bar gliding across the trace
-      drawBox3D(dpx,dpy-0.8,dpz,11,2.2,4.5,accentBright,accent,'#ffffff',1.1);
-      const dpProj=project(dpx,dpy+6.5,dpz);
+      const dpx=(tf[0]+tt[0])*0.5;
+      const dpy=(tf[1]+tt[1])*0.5+6.5;
+      const dpz=(tf[2]+tt[2])*0.5;
+      const dpProj=project(dpx,dpy,dpz);
       if(dpProj&&dpProj.z<520){
         ctx.save();
         ctx.font=isMobile?'900 8.5px ui-monospace,monospace':'900 10px ui-monospace,monospace';
@@ -1832,23 +1830,26 @@ function startJourney3DLoop(){
   canvas.addEventListener('pointercancel',()=>{downSwitch=null;dragging=false;canvas.style.cursor='grab'});
 })();
 
+let journeyTravelTimeout=null;
 function stopJourneyAuto(){clearInterval(journeyAutoTimer);journeyAutoTimer=null;$('#journeyAuto').innerHTML='Auto tour <b>▶</b>'}
 function jumpToJourneyIndex(next){
   const route=journeyRoute();
   next=Math.max(0,Math.min(route.length-1,next));
-  if(next===journeyIndex||journeyTraveling)return;
+  if(next===journeyIndex)return;
+  jPrevScene=route[journeyIndex]?.scene||'outside';
   journeyTraveling=true;
   jUserYaw=0;jUserPitch=0;
   $('#cpuJourney').classList.add('traveling');
   journeyIndex=next;
   updateJourneyTargets(false);
   renderJourney();
-  journeyTone(coreArch==='cisc'?210:270,.26);
-  setTimeout(()=>{
+  journeyTone(coreArch==='cisc'?210:270,.22);
+  clearTimeout(journeyTravelTimeout);
+  journeyTravelTimeout=setTimeout(()=>{
     journeyTraveling=false;
     $('#cpuJourney').classList.remove('traveling');
     renderJourney();
-  },780);
+  },jTransDur);
 }
 function travelJourney(direction){
   jumpToJourneyIndex(journeyIndex+direction);

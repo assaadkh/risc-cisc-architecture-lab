@@ -362,7 +362,7 @@
         </div>
 
         <div class="journey-launchbar">
-          <div><span class="journey-live-dot"></span><small>IMMERSIVE MODE</small><b>Become the data. Travel from outside the lab bench onto the silicon die.</b></div>
+          <div><span class="journey-live-dot"></span><small>SIGNAL & SILICON TRACE</small><b>Follow instruction signals from the hardware test bench down to the silicon die.</b></div>
           <button id="enterJourney">BEGIN 3D JOURNEY <strong>↗</strong></button>
         </div>
 
@@ -492,21 +492,21 @@
               <span class="chamber-overline" id="journeyUnitType">ARCHITECTURE LAB</span>
               <div class="chamber-symbol" id="journeySymbol">LAB</div>
             </div>
-            <h2 id="journeyTitle">Begin outside the electronics bench</h2>
-            <p id="journeyShort">You start in the lab, outside the computer.</p>
-            <div class="chamber-value"><small>PAYLOAD</small><code id="journeyPayload">Destination · RISC CPU</code></div>
+            <h2 id="journeyTitle">Hardware controller queues instruction</h2>
+            <p id="journeyShort">The 12-switch controller pad encodes the selected command into a 32-bit frame.</p>
+            <div class="chamber-value"><small>SIGNAL</small><code id="journeyPayload">Queued · RISC CPU</code></div>
           </div>
         </div>
 
         <div class="journey-bits" id="journeyBits" aria-hidden="true"></div>
-        <div class="journey-sidecard left-card"><small>PREVIOUS LOCATION</small><b id="journeyPrevious">Starting point</b></div>
-        <div class="journey-sidecard right-card"><small>NEXT DESTINATION</small><b id="journeyNext">Electronics workbench</b></div>
+        <div class="journey-sidecard left-card"><small>PREVIOUS STAGE</small><b id="journeyPrevious">Starting point</b></div>
+        <div class="journey-sidecard right-card"><small>NEXT STAGE</small><b id="journeyNext">Bus controller IC</b></div>
       </div>
 
       <div class="journey-narration">
         <div class="narration-index" id="journeyIndex">01</div>
-        <div class="narration-copy"><span id="journeyStage">LOCATION · APPROACH</span><h3 id="journeyNarrationTitle">Begin outside the electronics bench</h3><p id="journeyNarrationText">You start in the lab, outside the computer. Ahead, the motherboard carries the selected command toward its processor.</p></div>
-        <div class="journey-telemetry"><div><small>TRAVEL VELOCITY</small><b id="journeyVelocity">1.0 units/cycle</b></div><div><small>PACKET STATE</small><b id="journeyPacketState">TRAVELER</b></div></div>
+        <div class="narration-copy"><span id="journeyStage">CHECKPOINT 01 · TEST BENCH</span><h3 id="journeyNarrationTitle">Hardware controller queues instruction</h3><p id="journeyNarrationText">The 12-switch controller pad encodes the selected command into a 32-bit frame while the bench oscilloscope monitors the system clock.</p></div>
+        <div class="journey-telemetry"><div><small>CLOCK & BUS RATE</small><b id="journeyVelocity">1.00 GHz · SYNC BUS</b></div><div><small>SIGNAL STAGE</small><b id="journeyPacketState">COMMAND QUEUED</b></div></div>
         <div class="journey-controls"><button id="journeyBack" aria-label="Previous checkpoint">← Prev</button><button id="journeyAuto">Auto tour <b>▶</b></button><button id="journeyNextButton">Continue the route <b>→</b></button></div>
       </div>
       <div class="journey-help">DRAG 3D VIEW TO LOOK AROUND · ← → NAVIGATE · SPACE AUTO TOUR · ESC EXIT</div>
