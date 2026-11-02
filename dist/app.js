@@ -484,18 +484,18 @@ function getStage3DCoords(step,idx,route){
   }
   if(step.scene==='pins'){
     return {
-      cam:[-26,16,-48],
-      look:[0,12,18],
-      traceFrom:[0,22,-26],
-      traceTo:[0,4,6]
+      cam:[-68,38,-105],
+      look:[0,16,0],
+      traceFrom:[0,6,-38],
+      traceTo:[0,24,-6]
     };
   }
   if(step.scene==='substrate'){
     return {
-      cam:[-34,-18,-42],
-      look:[0,-72,15],
-      traceFrom:[0,6,-6],
-      traceTo:[0,-112,-15]
+      cam:[-82,-16,-118],
+      look:[0,-62,0],
+      traceFrom:[0,-8,-8],
+      traceTo:[0,-112,-8]
     };
   }
   if(step.scene==='die'){
@@ -973,21 +973,34 @@ function startJourney3DLoop(){
       ctx.restore();
     }
 
-    // Draw a smooth 3D shaded cylinder for hardware components (capacitors, gold pins, vias, knobs)
+    // Draw a smooth 3D shaded cylinder with depth-aware end-cap ordering (zero cap inversion!)
     function drawCylinder3D(p1,p2,r1,r2,baseColor,edgeColor=null){
+      const d1=Math.hypot(p1[0]-camX,p1[1]-camY,p1[2]-camZ);
+      const d2=Math.hypot(p2[0]-camX,p2[1]-camY,p2[2]-camZ);
+      const nearPt=d2<=d1?p2:p1;
+      const nearR=d2<=d1?r2:r1;
       drawSmoothCapsule3D(p1,p2,r1,r2,baseColor,edgeColor||shadeColor(baseColor,1.32),'rgba(0,0,0,0.35)');
-      const b=project(p2[0],p2[1],p2[2]);
+      const b=project(nearPt[0],nearPt[1],nearPt[2]);
       if(b&&b.z<600){
-        const rb=Math.max(1.2,r2*b.s);
-        ctx.save();
-        ctx.beginPath();
-        ctx.ellipse(b.x,b.y,rb,rb*0.58,0,0,Math.PI*2);
-        ctx.fillStyle=edgeColor||shadeColor(baseColor,1.25);
-        ctx.strokeStyle=shadeColor(baseColor,0.65);
-        ctx.lineWidth=0.7;
-        ctx.fill();
-        ctx.stroke();
-        ctx.restore();
+        const ax=p2[0]-p1[0], ay=p2[1]-p1[1], az=p2[2]-p1[2];
+        const alen=Math.hypot(ax,ay,az)||1;
+        const vx=camX-nearPt[0], vy=camY-nearPt[1], vz=camZ-nearPt[2];
+        const vlen=Math.hypot(vx,vy,vz)||1;
+        const sign=d2<=d1?1:-1;
+        const cosView=Math.abs((ax*sign*vx+ay*sign*vy+az*sign*vz)/(alen*vlen));
+        if(cosView>0.12){
+          const rb=Math.max(1.2,nearR*b.s);
+          const ry=Math.max(0.8,rb*Math.min(0.85,cosView));
+          ctx.save();
+          ctx.beginPath();
+          ctx.ellipse(b.x,b.y,rb,ry,0,0,Math.PI*2);
+          ctx.fillStyle=edgeColor||shadeColor(baseColor,1.25);
+          ctx.strokeStyle=shadeColor(baseColor,0.65);
+          ctx.lineWidth=0.7;
+          ctx.fill();
+          ctx.stroke();
+          ctx.restore();
+        }
       }
     }
 
@@ -1090,7 +1103,7 @@ function startJourney3DLoop(){
     // ========================================================================
     // 1. MACRO LAYER: REALISTIC HARDWARE TEST BENCH, INSTRUMENTS, HANDS & PCB
     // ========================================================================
-    if(step.scene==='outside'||step.scene==='bench'||step.scene==='board'||step.scene==='package'||step.scene==='pins'){
+    if(step.scene==='outside'||step.scene==='bench'||step.scene==='board'||step.scene==='package'){
       // Dark ESD Anti-Static Workbench Mat with bevel border & grounding snap
       drawPoly3D([[-380,0,-340],[380,0,-340],[380,0,280],[-380,0,280]],'#0e1713','#284235',2);
       drawPoly3D([[-365,0.2,-325],[365,0.2,-325],[365,0.2,265],[-365,0.2,265]],'#13201a','#345c46',1.2);
@@ -1452,46 +1465,94 @@ function startJourney3DLoop(){
     }
 
     // ========================================================================
-    // 2. MESO LAYER: 3D CYLINDRICAL GOLD PINS, ABF SUBSTRATE & COPPER VIAS
+    // 2A. PIN CORRIDOR LAYER (CHECKPOINT 05): DEPTH-SORTED GOLD LGA CONTACTS
     // ========================================================================
-    if(step.scene==='pins'||step.scene==='substrate'){
-      // 3D Cylindrical Gold-Plated Contact Pins (y: +4 to +22)
+    if(step.scene==='pins'){
+      jPadSwitchRects=[];
+      // Motherboard PCB base & LGA Socket Housing frame beneath the pins
+      drawBox3D(0,-8,0,240,10,200,'#0a2e1c','#061c11','#1e5e3a',1.5);
+      drawBox3D(0,2,0,118,4,118,'#334155','#1e293b','#64748b',1.3);
+
+      // Collect and depth-sort all 24 Gold LGA Contact Pins back-to-front by distance from camera!
+      const pinList=[];
       for(let px=-36;px<=36;px+=18){
         for(let pz=-36;pz<=36;pz+=18){
           if(Math.abs(px)<8&&Math.abs(pz)<8)continue;
-          drawCylinder3D([px,4,pz],[px,22,pz],2.6,2.2,'#eab308','#fef08a',8);
-          const pulseY=4+((t*18+(px+pz)*0.3)%17);
-          drawLine3D([px-3.2,pulseY,pz],[px+3.2,pulseY,pz],accentBright,2.0);
+          const dist=Math.hypot(px-camX,14-camY,pz-camZ);
+          pinList.push({px,pz,dist});
         }
       }
-      drawTraceWithData([0,24,-22],[0,4,0],step.scene==='pins',journeyIndex>4,'PIN SIGNAL · 1.2V',step.bits);
-      if(step.scene==='pins'){
-        spatialPins.push({pos:[-18,18,-18],tag:'GOLD LGA CONTACTS',label:'VDD / CLK / ADDR / DATA PINS',hi:true});
+      pinList.sort((a,b)=>b.dist-a.dist);
+
+      for(const {px,pz} of pinList){
+        // Gold contact pad on socket base
+        drawBox3D(px,6,pz,6.5,1.2,6.5,'#eab308','#78350f','#fef08a',0.7);
+        // Smooth gold cylindrical pin shaft rising from socket (y=6) to package underside (y=25)
+        drawCylinder3D([px,6.5,pz],[px,25,pz],2.3,2.0,'#eab308','#fef08a');
       }
 
-      // Multi-layer Copper Redistribution Substrate Planes & Cylindrical TSV Copper Vias (y: -112 to +4)
-      for(const ly of [-18,-48,-82]){
-        drawPoly3D([[-78,ly,-68],[78,ly,-68],[78,ly,68],[-78,ly,68]],'rgba(180,115,35,0.14)','rgba(245,158,11,0.52)',1.2);
-      }
-      for(let vx=-45;vx<=45;vx+=30){
-        for(let vz=-35;vz<=35;vz+=35){
-          drawCylinder3D([vx,-112,vz],[vx,4,vz],2.0,2.0,'#d97706','#fbbf24',6);
-          // C4 Flip-Chip Solder Micro-Bump at bottom of via (-114)
-          drawBox3D(vx,-116,vz,5,4,5,'#cbd5e1','#64748b','#f8fafc',0.8);
-        }
-      }
-      drawTraceWithData([0,4,0],[0,-112,-15],step.scene==='substrate',journeyIndex>5,'COPPER VIA → C4 BUMP',step.bits);
-      if(step.scene==='substrate'){
-        spatialPins.push({pos:[0,-45,0],tag:'PACKAGE SUBSTRATE',label:'COPPER VIAS & C4 FLIP-CHIP BUMPS',hi:true});
-      }
+      // Active 4-lane bus trace feeding the central processor contact bus
+      drawTraceWithData([0,6,-52],[0,24,-6],true,true,'PIN SIGNAL · 1.2V',step.bits);
+
+      // Translucent X-Ray CPU Package Substrate & IHS resting ON TOP of the gold pins (drawn after pins!)
+      drawBox3D(0,25,0,102,4.5,102,
+        isCisc?'rgba(16,64,92,0.52)':'rgba(16,78,48,0.52)',
+        'rgba(8,36,24,0.45)',
+        gold,1.4
+      );
+      drawBox3D(0,29.5,0,82,5,82,'rgba(180,192,204,0.38)','rgba(100,114,128,0.34)',accent,1.2);
+      spatialPins.push({pos:[-18,20,-18],tag:'GOLD LGA CONTACTS',label:'VDD / CLK / ADDR / DATA PINS',hi:true});
     }
 
     // ========================================================================
-    // 3. MICRO LAYER: PROPER PHOTOLITHOGRAPHY SILICON DIE & WAFER FLOORPLAN
+    // 2B. SUBSTRATE VIA LAYER (CHECKPOINT 06): DEPTH-SORTED TSV VIAS & C4 BUMPS
     // ========================================================================
-    if(step.scene==='substrate'||step.scene==='die'||step.scene==='internal'||step.scene==='exit'){
+    if(step.scene==='substrate'){
+      jPadSwitchRects=[];
+      // Silicon Die Top Landing Surface at bottom of substrate cutaway (y = -120)
+      drawBox3D(0,-126,0,220,6,180,'#09131c','#1e293b','#eab308',1.6);
+      for(let gx=-90;gx<=90;gx+=30){
+        drawLine3D([gx,-119.6,-75],[gx,-119.6,75],'rgba(234,179,8,0.18)',0.9);
+      }
+      for(let gz=-75;gz<=75;gz+=30){
+        drawLine3D([-95,-119.6,gz],[95,-119.6,gz],'rgba(56,189,248,0.14)',0.9);
+      }
+
+      // Multi-layer Copper Redistribution Planes (drawn bottom-to-top)
+      for(const ly of [-86,-52,-18]){
+        drawPoly3D([[-84,ly,-72],[84,ly,-72],[84,ly,72],[-84,ly,72]],'rgba(180,115,35,0.16)','rgba(245,158,11,0.55)',1.2);
+      }
+
+      // Collect and depth-sort all vertical Copper TSV Vias & C4 Micro-Bumps back-to-front!
+      const viaList=[];
+      for(let vx=-45;vx<=45;vx+=30){
+        for(let vz=-35;vz<=35;vz+=35){
+          const dist=Math.hypot(vx-camX,-58-camY,vz-camZ);
+          viaList.push({vx,vz,dist});
+        }
+      }
+      viaList.sort((a,b)=>b.dist-a.dist);
+
+      for(const {vx,vz} of viaList){
+        // C4 Flip-Chip Solder Micro-Bump on silicon die surface (y = -119..-114)
+        drawBox3D(vx,-119,vz,6.5,4.5,6.5,'#cbd5e1','#64748b','#f8fafc',0.9);
+        // Vertical Copper Through-Substrate Via (y = -114..0)
+        drawCylinder3D([vx,-114,vz],[vx,0,vz],2.1,2.1,'#d97706','#fbbf24');
+      }
+
+      drawTraceWithData([0,-4,-8],[0,-114,-8],true,true,'COPPER VIA → C4 BUMP',step.bits);
+      // Upper ABF Package Substrate Ceiling at y = 0..6
+      drawBox3D(0,0,0,176,5,150,'rgba(16,78,48,0.45)','rgba(8,36,24,0.42)',gold,1.3);
+      spatialPins.push({pos:[0,-48,0],tag:'PACKAGE SUBSTRATE',label:'COPPER VIAS & C4 FLIP-CHIP BUMPS',hi:true});
+    }
+
+    // ========================================================================
+    // 3. MICRO LAYER: DEPTH-SORTED SILICON DIE FLOORPLAN & ON-DIE BUS TRACES
+    // ========================================================================
+    if(step.scene==='die'||step.scene==='internal'||step.scene==='exit'){
+      jPadSwitchRects=[];
       const layout=DIE_LAYOUT_3D[coreArch];
-      // Metallic Silicon Wafer Die Bulk Substrate Slab (with thickness & bevel)
+      // 3.1 Metallic Silicon Wafer Die Bulk Substrate Slab (with thickness & bevel)
       drawBox3D(0,-128,5,690,8,465,'#09131c','#1e293b','#eab308',1.8);
       // Iridescent Photolithography Silicon Die Top Surface at y = -120
       drawPoly3D(
@@ -1500,17 +1561,7 @@ function startJourney3DLoop(){
         '#eab308',2.0
       );
 
-      // Perimeter Gold Flip-Chip Bond Pads & I/O Ring lining all 4 edges of the Silicon Die!
-      for(let bx=-310;bx<=310;bx+=26){
-        drawBox3D(bx,-119.5,-212,12,1.8,7,'#eab308','#a16207','#fef08a',0.7);
-        drawBox3D(bx,-119.5,222,12,1.8,7,'#eab308','#a16207','#fef08a',0.7);
-      }
-      for(let bz=-195;bz<=205;bz+=25){
-        drawBox3D(-328,-119.5,bz,7,1.8,12,'#eab308','#a16207','#fef08a',0.7);
-        drawBox3D(328,-119.5,bz,7,1.8,12,'#eab308','#a16207','#fef08a',0.7);
-      }
-
-      // Fine Photolithography Reticle & M1/M2 Copper Power-Grid Mesh across the silicon wafer
+      // 3.2 Fine Photolithography Reticle & M1/M2 Copper Power-Grid Mesh across the silicon wafer
       for(let gx=-300;gx<=300;gx+=30){
         drawLine3D([gx,-119.4,-205],[gx,-119.4,215],gx%60===0?'rgba(234,179,8,0.16)':'rgba(56,189,248,0.08)',gx%60===0?1.1:0.7);
       }
@@ -1518,72 +1569,23 @@ function startJourney3DLoop(){
         drawLine3D([-315,-119.4,gz],[315,-119.4,gz],gz%60===0?'rgba(234,179,8,0.16)':'rgba(56,189,248,0.08)',gz%60===0?1.1:0.7);
       }
 
-      // Draw every 3D Photolithography Silicon Functional Macro Block on the Die Floorplan
-      Object.entries(layout).forEach(([key,u])=>{
-        const [ux,uz,uw,uh,ud,ulabel]=u;
-        const isCurrent=(step.unit===key);
-        const isVisited=route.slice(7,journeyIndex).some(s=>s.unit===key);
+      // 3.3 Depth-Sorted Perimeter Gold Flip-Chip Bond Pads lining all 4 edges of the Silicon Die
+      const bondPads=[];
+      for(let bx=-310;bx<=310;bx+=26){
+        bondPads.push({x:bx,z:-212,w:12,d:7});
+        bondPads.push({x:bx,z:222,w:12,d:7});
+      }
+      for(let bz=-195;bz<=205;bz+=25){
+        bondPads.push({x:-328,z:bz,w:7,d:12});
+        bondPads.push({x:328,z:bz,w:7,d:12});
+      }
+      bondPads.sort((a,b)=>Math.hypot(b.x-camX,-119-camY,b.z-camZ)-Math.hypot(a.x-camX,-119-camY,a.z-camZ));
+      for(const bp of bondPads){
+        drawBox3D(bp.x,-119.5,bp.z,bp.w,1.8,bp.d,'#eab308','#a16207','#fef08a',0.7);
+      }
 
-        // Realistic silicon macro colors (deep cobalt/emerald/gold photolithography tones)
-        const topCol=isCurrent
-          ?(isCisc?'#2563eb':'#16a34a')
-          :isVisited
-          ?(isCisc?'#1e3a8a':'#14532d')
-          :(isCisc?'#0f2447':'#0d2b1d');
-        const sideCol=isCurrent
-          ?(isCisc?'#1d4ed8':'#15803d')
-          :(isCisc?'#0b1933':'#081c13');
-        const edgeCol=isCurrent?'#ffffff':isVisited?accent:'#d97706';
-        const boxH=(isCurrent?uh+6:uh)*0.55; // Sleek, low-profile realistic silicon macro relief
-
-        // Gold/Copper Power Ring pad framing the silicon block on the wafer
-        drawPoly3D(
-          [[ux-uw*0.54,-119.2,uz-ud*0.54],[ux+uw*0.54,-119.2,uz-ud*0.54],[ux+uw*0.54,-119.2,uz+ud*0.54],[ux-uw*0.54,-119.2,uz+ud*0.54]],
-          'rgba(234,179,8,0.14)',isCurrent?accentBright:'rgba(234,179,8,0.55)',1.1
-        );
-
-        // Main Silicon Macro Block Volume
-        drawBox3D(ux,-119,uz,uw,boxH,ud,topCol,sideCol,edgeCol,isCurrent?2.0:1.1,-119.1);
-
-        // Dense Photolithography Internal Sub-Arrays on the top face of the silicon block!
-        const topY=-119+boxH+0.4;
-        const isMemBlock=(key==='icache'||key==='dcache'||key==='ucode'||key==='lsu'||key==='regs'||key==='rename'||key==='queue'||key==='retire');
-        if(isMemBlock){
-          const cols=3, rows=2;
-          const cellW=(uw*0.76)/cols, cellD=(ud*0.72)/rows;
-          for(let r=0;r<rows;r++){
-            for(let c=0;c<cols;c++){
-              const cx=ux-uw*0.38+cellW*(c+0.5)+(c-1)*2.2;
-              const cz=uz-ud*0.36+cellD*(r+0.5)+(r-0.5)*2.5;
-              drawBox3D(
-                cx,topY,cz,cellW,2.2,cellD,
-                isCurrent?'#38bdf8':(isCisc?'#1e40af':'#0f766e'),
-                '#0f172a',
-                isCurrent?'#ffffff':'#eab308',0.8
-              );
-            }
-          }
-        }else{
-          for(let r=-2;r<=2;r++){
-            const rz=uz+r*(ud*0.16);
-            drawBox3D(
-              ux,topY,rz,uw*0.82,1.6,ud*0.09,
-              isCurrent?accentBright:'#eab308',
-              '#1e293b',
-              isCurrent?'#ffffff':copper,0.7
-            );
-          }
-        }
-
-        spatialPins.push({
-          pos:[ux,topY+8,uz],
-          tag:isCurrent?'ACTIVE SILICON MACRO':isVisited?'COMPLETED MACRO':'SILICON MACRO',
-          label:ulabel,
-          hi:isCurrent
-        });
-      });
-
-      // Draw all internal on-die 4-lane metal bus traces between perimeter edges of sequential macro blocks!
+      // 3.4 Draw On-Die 4-Lane Metal Bus Traces ON THE WAFER SURFACE (y = -118.5)
+      // BEFORE the raised 3D Silicon Macro Blocks so background traces NEVER paint over foreground 3D blocks!
       const progSteps=journeyProgram().steps;
       for(let sIdx=0;sIdx<progSteps.length;sIdx++){
         const curS=progSteps[sIdx];
@@ -1600,8 +1602,8 @@ function startJourney3DLoop(){
         const isCurrentTrace=(journeyIndex===routeIdx);
         const isDoneTrace=(journeyIndex>routeIdx);
         drawTraceWithData(
-          [prevU[0]+nx*sOff,-115,prevU[1]+nz*sOff],
-          [curU[0]-nx*eOff,-115,curU[1]-nz*eOff],
+          [prevU[0]+nx*sOff,-118.4,prevU[1]+nz*sOff],
+          [curU[0]-nx*eOff,-118.4,curU[1]-nz*eOff],
           isCurrentTrace,
           isDoneTrace,
           curS.value,
@@ -1609,18 +1611,99 @@ function startJourney3DLoop(){
         );
       }
 
-      // System Bus Exit Conduit rising from the last unit
-      const lastUnitKey=progSteps[progSteps.length-1]?.unit;
-      const lastU=layout[lastUnitKey];
-      if(lastU){
-        drawTraceWithData(
-          [lastU[0],-108,lastU[1]-32],
-          [0,-38,-90],
-          step.scene==='exit',
-          false,
-          `RESULT: ${progSteps[progSteps.length-1].value}`,
-          step.bits
+      // 3.5 Draw every 3D Photolithography Silicon Functional Macro Block SORTED BACK-TO-FRONT by camera distance!
+      const sortedMacros=Object.entries(layout).map(([key,u])=>{
+        const [ux,uz]=u;
+        const dist=Math.hypot(ux-camX,-110-camY,uz-camZ);
+        return {key,u,dist};
+      }).sort((a,b)=>b.dist-a.dist);
+
+      for(const {key,u} of sortedMacros){
+        const [ux,uz,uw,uh,ud,ulabel]=u;
+        const isCurrent=(step.unit===key);
+        const isVisited=route.slice(7,journeyIndex).some(s=>s.unit===key);
+
+        const topCol=isCurrent
+          ?(isCisc?'#2563eb':'#16a34a')
+          :isVisited
+          ?(isCisc?'#1e3a8a':'#14532d')
+          :(isCisc?'#0f2447':'#0d2b1d');
+        const sideCol=isCurrent
+          ?(isCisc?'#1d4ed8':'#15803d')
+          :(isCisc?'#0b1933':'#081c13');
+        const edgeCol=isCurrent?'#ffffff':isVisited?accent:'#d97706';
+        const boxH=(isCurrent?uh+6:uh)*0.55;
+
+        // Gold/Copper Power Ring pad framing the silicon block on the wafer
+        drawPoly3D(
+          [[ux-uw*0.54,-119.2,uz-ud*0.54],[ux+uw*0.54,-119.2,uz-ud*0.54],[ux+uw*0.54,-119.2,uz+ud*0.54],[ux-uw*0.54,-119.2,uz+ud*0.54]],
+          'rgba(234,179,8,0.14)',isCurrent?accentBright:'rgba(234,179,8,0.55)',1.1
         );
+
+        // Main Silicon Macro Block Volume
+        drawBox3D(ux,-119,uz,uw,boxH,ud,topCol,sideCol,edgeCol,isCurrent?2.0:1.1,-119.1);
+
+        // Dense Photolithography Internal Sub-Arrays on the top face, ALSO depth-sorted back-to-front!
+        const topY=-119+boxH+0.4;
+        const isMemBlock=(key==='icache'||key==='dcache'||key==='ucode'||key==='lsu'||key==='regs'||key==='rename'||key==='queue'||key==='retire');
+        const subBoxes=[];
+        if(isMemBlock){
+          const cols=3, rows=2;
+          const cellW=(uw*0.76)/cols, cellD=(ud*0.72)/rows;
+          for(let r=0;r<rows;r++){
+            for(let c=0;c<cols;c++){
+              const cx=ux-uw*0.38+cellW*(c+0.5)+(c-1)*2.2;
+              const cz=uz-ud*0.36+cellD*(r+0.5)+(r-0.5)*2.5;
+              subBoxes.push({
+                cx,cz,w:cellW,h:2.2,d:cellD,
+                tCol:isCurrent?'#38bdf8':(isCisc?'#1e40af':'#0f766e'),
+                sCol:'#0f172a',
+                eCol:isCurrent?'#ffffff':'#eab308',
+                lw:0.8,
+                dist:Math.hypot(cx-camX,topY-camY,cz-camZ)
+              });
+            }
+          }
+        }else{
+          for(let r=-2;r<=2;r++){
+            const rz=uz+r*(ud*0.16);
+            subBoxes.push({
+              cx:ux,cz:rz,w:uw*0.82,h:1.6,d:ud*0.09,
+              tCol:isCurrent?accentBright:'#eab308',
+              sCol:'#1e293b',
+              eCol:isCurrent?'#ffffff':copper,
+              lw:0.7,
+              dist:Math.hypot(ux-camX,topY-camY,rz-camZ)
+            });
+          }
+        }
+        subBoxes.sort((a,b)=>b.dist-a.dist);
+        for(const sb of subBoxes){
+          drawBox3D(sb.cx,topY,sb.cz,sb.w,sb.h,sb.d,sb.tCol,sb.sCol,sb.eCol,sb.lw);
+        }
+
+        spatialPins.push({
+          pos:[ux,topY+8,uz],
+          tag:isCurrent?'ACTIVE SILICON MACRO':isVisited?'COMPLETED MACRO':'SILICON MACRO',
+          label:ulabel,
+          hi:isCurrent
+        });
+      }
+
+      // 3.6 System Bus Exit Conduit (ONLY drawn during Checkpoint 15 'exit' so it never photobombs internal stages!)
+      if(step.scene==='exit'){
+        const lastUnitKey=progSteps[progSteps.length-1]?.unit;
+        const lastU=layout[lastUnitKey];
+        if(lastU){
+          drawTraceWithData(
+            [lastU[0],-104,lastU[1]-32],
+            [0,-38,-90],
+            true,
+            false,
+            `RESULT: ${progSteps[progSteps.length-1].value}`,
+            step.bits
+          );
+        }
       }
     }
 
@@ -1628,6 +1711,7 @@ function startJourney3DLoop(){
     // 4. SYNCHRONIZED BUS PACKET TRANSPONDER & CALLOUT (NO DUPLICATE OVERDRAW)
     // ========================================================================
     const curCoords=getStage3DCoords(step,journeyIndex,route);
+    let packetBannerPos=null;
     if(curCoords.traceFrom&&curCoords.traceTo&&step.scene!=='outside'){
       const tf=curCoords.traceFrom, tt=curCoords.traceTo;
       const uSync=0.52+Math.sin(t*2.6)*0.16;
@@ -1643,6 +1727,7 @@ function startJourney3DLoop(){
         const syncTxt=isMobile?step.value:`BUS PACKET · ${step.value}`;
         const stw=ctx.measureText(syncTxt).width+16;
         const bx=Math.max(stw*0.5+8,Math.min(w-stw*0.5-8,dpProj.x));
+        packetBannerPos={x:bx,y:dpProj.y-15};
         ctx.fillStyle='rgba(4,12,9,0.92)';
         ctx.strokeStyle=accentBright;
         ctx.lineWidth=1.2;
@@ -1668,8 +1753,9 @@ function startJourney3DLoop(){
         for(const pin of spatialPins){
           const pr=project(pin.pos[0],pin.pos[1],pin.pos[2]);
           if(!pr||pr.z>950||pr.z<15)continue;
-          if(pr.x<60||pr.x>w-60||pr.y<55||pr.y>h-45)continue;
-          if(pr.x<390&&pr.y<365)continue;
+          if(pr.x<90||pr.x>w-90||pr.y<65||pr.y>h-55)continue;
+          if(pr.x<485&&pr.y<340)continue;
+          if(packetBannerPos&&Math.abs(pr.x-packetBannerPos.x)<165&&Math.abs(pr.y-packetBannerPos.y)<42)continue;
           visiblePins.push({...pin,x:Math.round(pr.x),y:Math.round(pr.y),z:pr.z});
         }
         visiblePins.sort((a,b)=>(b.hi?1:0)-(a.hi?1:0)||a.z-b.z);
